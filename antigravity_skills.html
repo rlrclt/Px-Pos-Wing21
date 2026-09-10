@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Skills Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .text-balance {
+            text-wrap: balance;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-6">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Antigravity Skills</h1>
+                <p class="text-slate-500 mt-2">Agent Capability & Workflow Dashboard v2.0</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-2">
+                <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium">Standard Mode</span>
+                <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">System Online</span>
+            </div>
+        </header>
+
+        <main class="space-y-16">
+            
+            <!-- Category 1: UX/UI -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        <i class="fa-solid fa-pen-ruler"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">1. หมวดหมู่การออกแบบ UX/UI (UX/UI Design)</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-indigo-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-indigo-500 group-hover:scale-110 transition-transform"></i> impeccable
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อผู้ใช้ต้องการออกแบบ, ปรับปรุง, ตรวจสอบ, หรือขัดเกลาหน้าตาของ User Interface (UI) ให้มีความเป็นมืออาชีพ ไม่ว่าจะเป็นเว็บไซต์, แดชบอร์ด, หรือคอมโพเนนต์ต่างๆ</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> Agent จะใช้หลักการออกแบบ Frontend ที่มีความละเอียดอ่อน (Craft) เพื่อขจัดหน้าตาแบบ AI Slop (เช่น สีม่วง/ฟ้าเรืองแสง) และสร้าง Design System ที่แข็งแรง ทั้งในเรื่องของสี, Typography, การจัดวาง, และแอนิเมชัน ให้ได้งานที่ใช้งานได้จริงและสวยงาม</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 2: Planning -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">2. หมวดหมู่การวางแผน (Planning)</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-blue-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-handshake text-blue-500 group-hover:scale-110 transition-transform"></i> handoff
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อกำลังจะจบเซสชั่นการทำงานปัจจุบัน, รันคำสั่งครบข้อจำกัด, หรืองานมีความซับซ้อนมากจนต้องส่งต่อบริบทให้ Agent ตัวถัดไปมารับช่วงต่อ</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> สร้างหรืออัปเดตไฟล์เอกสาร `HANDOFF.md` อย่างละเอียด โดยบันทึกความคืบหน้าของงาน, สิ่งที่ทำสำเร็จ, ปัญหาหรือบั๊กที่ยังแก้ไม่ตก, และเป้าหมาย/ขั้นตอนที่ต้องทำต่อไป เพื่อให้ Agent ตัวใหม่มีข้อมูลครบถ้วนโดยไม่ต้องเริ่มใหม่</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-blue-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-regular fa-lightbulb text-blue-500 group-hover:scale-110 transition-transform"></i> brainstorming
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อเผชิญกับโปรเจกต์ใหม่, ฟีเจอร์ใหม่, หรืองานที่ต้องการความคิดสร้างสรรค์ ซึ่งยังไม่มีข้อกำหนด (Requirements) หรือแนวทางที่ชัดเจน</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> Agent จะตั้งคำถามเจาะลึกเพื่อสำรวจความต้องการของผู้ใช้, ค้นหาไอเดียทางเลือก, ประเมินความเสี่ยง, และร่วมกันร่างโครงสร้างสถาปัตยกรรม (Architecture) จนกว่าจะได้ภาพรวมที่ชัดเจนและได้รับการอนุมัติ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-blue-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-blue-500 group-hover:scale-110 transition-transform"></i> writing-plans
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อมีเป้าหมาย, ข้อกำหนด (Spec), หรือผลลัพธ์จากการ brainstorm ที่ชัดเจนแล้ว แต่ยังไม่มีขั้นตอนการลงมือทำที่ชัดเจน (ยังไม่พร้อมเขียนโค้ด)</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> วิเคราะห์ความต้องการและแตกงานใหญ่ออกเป็น "แผนการทำงานแบบเป็นขั้นตอน" (Step-by-step Execution Plan) ที่ละเอียด, มีลำดับการทำงานที่ถูกต้อง, และมีจุดเช็คพอยต์ (Checkpoints) สำหรับตรวจสอบความถูกต้องในแต่ละระยะ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-blue-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-shuffle text-blue-500 group-hover:scale-110 transition-transform"></i> dispatching-parallel-agents
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อในแผนงานมีงานย่อยหลายงานที่เป็นอิสระต่อกัน (Independent tasks) ไม่มีการใช้ตัวแปรร่วมกัน และไม่ต้องรอให้อีกงานเสร็จก่อน</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> กระจายงานเหล่านั้นให้กับ Subagent หลายๆ ตัวทำงานไปพร้อมๆ กัน (Parallel execution) เพื่อประหยัดเวลาอย่างมหาศาล โดยคอยติดตามสถานะและรวบรวมผลลัพธ์</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-blue-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-code-branch text-blue-500 group-hover:scale-110 transition-transform"></i> using-git-worktrees
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อต้องเริ่มงานฟีเจอร์ใหม่หรือทดลองแก้โค้ดที่อาจทำให้โค้ดหลักพัง และต้องการสภาพแวดล้อมที่แยกตัวออกมา (Isolation)</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> ตรวจสอบสถานะของ Repository ปัจจุบัน และใช้คำสั่งสร้าง Git Worktree (หรือ Branch ใหม่ถ้าจำเป็น) เพื่อให้สามารถเขียนโค้ดและทดสอบได้อย่างอิสระ โดยไม่กระทบโฟลเดอร์หลัก</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 3: Development -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">3. หมวดหมู่การลงมือพัฒนา (Development & Execution)</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-emerald-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-rocket text-emerald-500 group-hover:scale-110 transition-transform"></i> executing-plans
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อมีไฟล์แผนการทำงาน (Plan) ที่เขียนไว้อย่างชัดเจน และพร้อมที่จะลงมือเขียนโค้ดในเซสชั่นใหม่</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> ดำเนินการเขียนโค้ดตามแผนทีละขั้นตอนอย่างเคร่งครัด พร้อมทั้งหยุดรายงานผลและขอการอนุมัติ (Review checkpoints) จากผู้ใช้เมื่อจบแต่ละขั้นตอนสำคัญ เพื่อให้มั่นใจว่ามาถูกทาง</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-emerald-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-robot text-emerald-500 group-hover:scale-110 transition-transform"></i> subagent-driven-development
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อมีแผนการทำงานที่ประกอบด้วย Task ย่อยหลายอย่างในเซสชั่นปัจจุบัน และการทำคนเดียวอาจใช้เวลานานหรือกินบริบท (Context) มากเกินไป</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> เรียกใช้ Subagent มารับหน้าที่เขียนโค้ดหรือตรวจสอบการทำงานในแต่ละส่วนแยกกัน โดย Agent หลักจะทำหน้าที่เป็นผู้จัดการ (Manager) คอยแจกจ่ายงานและตรวจสอบโค้ด</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-emerald-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-flask text-emerald-500 group-hover:scale-110 transition-transform"></i> test-driven-development
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อต้องเริ่มต้นเขียนโค้ดฟีเจอร์ใหม่, สร้างคอมโพเนนต์ใหม่, หรือกำลังจะแก้ไขบั๊กที่มีการรายงานเข้ามา</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> บังคับใช้กระบวนการ TDD อย่างเคร่งครัด โดยจะต้องเขียนเทสต์ (Unit/Integration) ให้ล้มเหลว (Red) ก่อน จากนั้นจึงเขียนโค้ดจริงเพื่อให้เทสต์ผ่าน (Green) และ Refactor ในที่สุด</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 4: Debugging -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
+                        <i class="fa-solid fa-bug"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">4. หมวดหมู่การตรวจสอบและแก้ปัญหา (Review & Debugging)</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-orange-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-bug text-orange-500 group-hover:scale-110 transition-transform"></i> systematic-debugging
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อเจอบั๊ก, เทสต์พัง, หรือระบบแสดงพฤติกรรมที่ไม่คาดคิด และยังไม่ทราบสาเหตุที่แน่ชัด</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> สั่งห้ามการเดาสุ่มแก้โค้ดหรือลองผิดลองถูก Agent จะต้องรวบรวมข้อมูล, วิเคราะห์ Log, ตรวจสอบสมมติฐาน, และหา "ต้นตอ" (Root cause) ของปัญหาให้เจอก่อนเสมอ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-orange-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass text-orange-500 group-hover:scale-110 transition-transform"></i> requesting-code-review
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อพัฒนางานชิ้นใหญ่เสร็จสิ้น, ทำตามแผนจนครบ, หรือเตรียมพร้อมที่จะดึงโค้ด (Merge) เข้าสู่ Main Branch</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> ร้องขอให้ผู้ใช้หรือ Agent ตัวอื่นทำการรีวิวโค้ดอย่างละเอียด โดยนำเสนอรายการสิ่งที่เปลี่ยนแปลง เหตุผลในการตัดสินใจ และจุดที่อาจต้องระวัง เพื่อให้มั่นใจในคุณภาพ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-orange-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-regular fa-comments text-orange-500 group-hover:scale-110 transition-transform"></i> receiving-code-review
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อได้รับข้อเสนอแนะ (Feedback) หรือคอมเมนต์จากการรีวิวโค้ด (PR Comments)</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> รับข้อเสนอแนะมาวิเคราะห์ด้วยความรอบคอบทางเทคนิค ไม่แก้ตามทันทีแบบหลับหูหลับตา หากคอมเมนต์ขัดแย้งกับหลักการจะอธิบายชี้แจง แต่หากถูกต้องจะดำเนินการแก้ไข</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-orange-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-orange-500 group-hover:scale-110 transition-transform"></i> verification-before-completion
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อ Agent คิดว่างานเสร็จแล้ว และกำลังจะพิมพ์ตอบผู้ใช้ว่า "แก้ไขเรียบร้อยแล้ว"</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> กฎเหล็กที่บังคับให้ Agent ต้องรันคำสั่งตรวจสอบ (เช่น สคริปต์เทสต์ หรือ Lint) และต้องเห็นผลลัพธ์ว่า "ผ่าน" จริงๆ ก่อนที่จะกล้าประกาศความสำเร็จ ห้ามใช้การคาดเดา</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-orange-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-flag-checkered text-orange-500 group-hover:scale-110 transition-transform"></i> finishing-a-development-branch
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่องานใน Branch ปัจจุบันเสร็จสมบูรณ์ 100%, ผ่านการเทสต์, และผ่านการรีวิวเรียบร้อยแล้ว</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> ช่วยผู้ใช้จัดการขั้นตอนปิดจ๊อบ เช่น การคลีนโค้ด, การเขียน Commit message ที่ได้มาตรฐาน, และช่วยตัดสินใจวิธีรวมโค้ด (Merge) กลับเข้าสู่ Main Branch อย่างปลอดภัย</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 5: System -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-700">
+                        <i class="fa-solid fa-gear"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">5. หมวดหมู่ระบบและการสื่อสาร (System & Interaction)</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-slate-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt-lightning text-slate-500 group-hover:scale-110 transition-transform"></i> using-superpowers
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> ทันทีที่เริ่มต้นบทสนทนาใหม่ในทุกๆ ครั้ง</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> เป็นข้อบังคับระดับระบบที่ให้ Agent ตรวจสอบและดึงทักษะพิเศษ (Skills) หรือเอกสารคู่มือมาอ่านก่อนที่จะไปลงมือทำแอคชั่นอื่นๆ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-slate-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-bone text-slate-500 group-hover:scale-110 transition-transform"></i> caveman
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานะปัจจุบัน (Default):</span> เปิดใช้แบบ `full` อัตโนมัติทุก session ไม่ต้องพิมพ์ `/caveman`</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> บีบอัดคำตอบ ตัดคำเยิ่นเย้อ คำทักทาย และการรายงาน progress แต่เก็บข้อมูลเทคนิค คำสั่ง ตัวเลข error และข้อควรระวังไว้ครบ ใช้ `normal mode`, `stop caveman` หรือ `/caveman off` เพื่อปิด</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-slate-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-screwdriver-wrench text-slate-500 group-hover:scale-110 transition-transform"></i> agy-customizations
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อผู้ใช้มีคำถาม หรือต้องการปรับแต่งระบบ Antigravity ด้วยตัวเอง</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> เปิดอ่านคู่มือเชิงลึกที่อธิบายกลไก เพื่อนำทางผู้ใช้ในการสร้าง Skills, Rules, Plugins, Hooks, หรือเชื่อมต่อ MCP Servers เข้ากับระบบ</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-slate-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-map text-slate-500 group-hover:scale-110 transition-transform"></i> antigravity-guide
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อผู้ใช้มีคำถามพื้นฐานเกี่ยวกับการใช้งานระบบ Antigravity (AGY)</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> ใช้เอกสารคู่มือและแผนผังเว็บไซต์รวม (Sitemap) ของ Antigravity CLI, IDE, Python SDK และคำสั่งลัดต่างๆ เพื่อตอบข้อสงสัย</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full border-t-4 border-t-slate-500 group">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-pen-nib text-slate-500 group-hover:scale-110 transition-transform"></i> writing-skills
+                        </h3>
+                        <p class="text-slate-700 text-sm mb-2"><span class="font-semibold text-slate-900"><i class="fa-solid fa-thumbtack text-slate-400 mr-1"></i> สถานการณ์ (Trigger):</span> เมื่อผู้ใช้ต้องการให้สร้างไฟล์คำสั่ง Skill ใหม่ หรือแก้ไขปรับปรุงของเดิม</p>
+                        <p class="text-slate-600 text-sm mb-0 flex-grow"><span class="font-semibold text-slate-900"><i class="fa-solid fa-gear text-slate-400 mr-1"></i> การทำงาน (Action):</span> แนะนำรูปแบบ โครงสร้าง แนวทางปฏิบัติที่ดีที่สุด (Best practices) และวิธีการทดสอบ เพื่อให้แน่ใจว่าไฟล์ Skill ที่สร้างใหม่ระบบสามารถอ่านได้</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 6: Gemini Setup -->
+            <section class="border-t border-slate-200 pt-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
+                        <i class="fa-brands fa-google"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">6. Gemini ที่จูนไว้ และวิธีเริ่มใช้</h2>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-violet-600"></i> สิ่งที่จูนแล้ว
+                        </h3>
+                        <ul class="space-y-3 text-sm text-slate-600 leading-6">
+                            <li><span class="font-semibold text-slate-900">ตอบสั้น:</span> ใช้ caveman full ทุก session และไม่รายงานขั้นตอนระหว่างทำงาน</li>
+                            <li><span class="font-semibold text-slate-900">ทำงานรอบคอบ:</span> อ่านโค้ดก่อนแก้ ใช้ skill ตามชนิดงาน และไม่อ้างผลทดสอบที่ยังไม่ได้รัน</li>
+                            <li><span class="font-semibold text-slate-900">ตรวจจบงาน:</span> รัน test หรือ build ที่เกี่ยวข้องก่อนสรุปผล</li>
+                            <li><span class="font-semibold text-slate-900">ตอบไทย:</span> ตามภาษาที่ผู้ใช้พิมพ์ โดยเก็บคำสั่งและศัพท์เทคนิคให้ตรงต้นฉบับ</li>
+                        </ul>
+                    </article>
+
+                    <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-people-group text-violet-600"></i> Agents ที่เพิ่ม
+                        </h3>
+                        <ul class="space-y-3 text-sm text-slate-600 leading-6">
+                            <li><code class="font-semibold text-slate-900">@task-planner</code> วางแผนงานใหญ่โดยไม่แก้ไฟล์</li>
+                            <li><code class="font-semibold text-slate-900">@code-implementer</code> ลงมือแก้แบบ scope เล็กและทดสอบ</li>
+                            <li><code class="font-semibold text-slate-900">@bug-investigator</code> หาต้นตอ bug พร้อมหลักฐาน</li>
+                            <li><code class="font-semibold text-slate-900">@quality-reviewer</code> รีวิวความถูกต้อง ความเสี่ยง และ test gap</li>
+                            <li><code class="font-semibold text-slate-900">@ui-ux-reviewer</code> ตรวจ usability, responsive และ accessibility</li>
+                        </ul>
+                    </article>
+
+                    <article class="bg-slate-900 rounded-xl p-6 shadow-sm text-slate-100">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-folder-tree text-violet-300"></i> ไฟล์ที่ต้องมี
+                        </h3>
+                        <div class="space-y-3 text-sm leading-6">
+                            <p><code class="text-violet-200">~/.gemini/GEMINI.md</code><br><span class="text-slate-300">Global entry point; import กติกาและ caveman</span></p>
+                            <p><code class="text-violet-200">~/.gemini/config/GEMINI.md</code><br><span class="text-slate-300">กติกาการทำงาน global</span></p>
+                            <p><code class="text-violet-200">~/.gemini/agents/*.md</code><br><span class="text-slate-300">Agent definitions ทั้ง 5 บทบาท</span></p>
+                            <p><code class="text-violet-200">.gemini/GEMINI.md</code><br><span class="text-slate-300">กติกาเฉพาะโปรเจกต์ เช่น POS, sync และ test</span></p>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <article class="bg-violet-50 rounded-xl border border-violet-100 p-6">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-play text-violet-700"></i> เปิดใช้ครั้งแรก หรือหลังแก้ config
+                        </h3>
+                        <ol class="space-y-3 text-sm text-slate-700 leading-6 list-decimal list-inside">
+                            <li>เปิด Gemini CLI หรือ Antigravity ที่โฟลเดอร์โปรเจกต์</li>
+                            <li>พิมพ์ <code class="bg-white px-1.5 py-0.5 rounded text-violet-800">/memory reload</code> เพื่ออ่าน global และ project instructions ใหม่</li>
+                            <li>พิมพ์ <code class="bg-white px-1.5 py-0.5 rounded text-violet-800">/agents reload</code> เพื่อโหลด custom agents ใหม่</li>
+                            <li>พิมพ์ <code class="bg-white px-1.5 py-0.5 rounded text-violet-800">/agents list</code> แล้วตรวจว่ามี agent ทั้ง 5 ตัว</li>
+                            <li>ลองใช้ เช่น <code class="bg-white px-1.5 py-0.5 rounded text-violet-800">@task-planner วางแผนเพิ่มระบบส่วนลดสินค้า</code></li>
+                        </ol>
+                    </article>
+
+                    <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-right-arrow-left text-violet-600"></i> ย้ายไป Gemini เครื่องหรือบัญชีใหม่
+                        </h3>
+                        <ol class="space-y-3 text-sm text-slate-600 leading-6 list-decimal list-inside">
+                            <li>ติดตั้งและลงชื่อเข้าใช้ Gemini CLI/Antigravity ให้เรียบร้อย</li>
+                            <li>คัดลอกโฟลเดอร์ <code class="text-slate-900">~/.gemini/agents/</code> และไฟล์ global ทั้งสองรายการไปยัง home directory ของบัญชีใหม่</li>
+                            <li>คัดลอก <code class="text-slate-900">.gemini/GEMINI.md</code> ไปพร้อม repository หากต้องการกติกาเฉพาะโปรเจกต์</li>
+                            <li>เปิด session ใหม่ แล้วรัน <code class="text-slate-900">/memory reload</code>, <code class="text-slate-900">/agents reload</code>, และ <code class="text-slate-900">/agents list</code></li>
+                        </ol>
+                        <p class="mt-4 text-sm text-slate-500"><span class="font-semibold text-slate-700">ถ้าไม่เห็น agent:</span> ตรวจ path, ชื่อไฟล์ <code>.md</code>, YAML frontmatter ที่ขึ้นต้นและปิดท้ายด้วย <code>---</code>, แล้ว reload อีกครั้ง</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Category 6: Workflow Combos -->
+            <section class="mt-20 border-t-4 border-slate-800 pt-10">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 text-xl">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900 tracking-tight">7. แนะนำคอมโบการทำงาน (Workflow Combos)</h2>
+                        <p class="text-sm text-slate-500 mt-2">ตั้งค่าให้ Gemini วิเคราะห์งานและเลือกใช้คอมโบที่เหมาะเองแล้ว โดยทุกคอมโบตอบด้วย caveman full ไม่ต้องพิมพ์ชื่อ skill หรือ agent</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Combo 1 -->
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-rocket text-blue-500"></i> The Feature Creator
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4">กระบวนการสร้างฟีเจอร์ใหม่ตั้งแต่เริ่มคิดไปจนถึงการเขียนโค้ดเสร็จสมบูรณ์</p>
+                        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-regular fa-lightbulb"></i> brainstorming</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-right"></i></span>
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> writing-plans</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-right"></i></span>
+                            <span class="bg-emerald-600 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-rocket"></i> executing-plans</span>
+                        </div>
+                    </div>
+
+                    <!-- Combo 2 -->
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-bug text-orange-500"></i> The Bug Squasher
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4">กระบวนการหาบั๊กอย่างมีระบบ วิเคราะห์ต้นตอ และเขียนเทสต์กันพลาดเพื่อไม่ให้เกิดซ้ำ</p>
+                        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                            <span class="bg-orange-500 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-bug"></i> systematic-debugging</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-plus"></i></span>
+                            <span class="bg-emerald-600 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-flask"></i> test-driven-dev</span>
+                        </div>
+                    </div>
+
+                    <!-- Combo 3 -->
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-purple-500"></i> The Perfect PR
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4">กระบวนการปิดจ๊อบงานชิ้นใหญ่ ตรวจสอบก่อนส่ง รีวิวโค้ด และรวมเข้า Main Branch อย่างปลอดภัย</p>
+                        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                            <span class="bg-orange-500 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> verification</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-right"></i></span>
+                            <span class="bg-orange-500 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> request-review</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-right"></i></span>
+                            <span class="bg-orange-500 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> finishing-branch</span>
+                        </div>
+                    </div>
+
+                    <!-- Combo 4 -->
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-indigo-500"></i> The UI/UX Polish
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4">กระบวนการออกแบบหน้าตาโปรดักต์ วางโครงสร้างสถาปัตยกรรม และขัดเกลาหน้าตาให้เนียนตาก่อนลงมือโค้ดจริง</p>
+                        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                            <span class="bg-indigo-500 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-solid fa-palette"></i> impeccable</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-plus"></i></span>
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-md flex items-center gap-1"><i class="fa-regular fa-lightbulb"></i> brainstorming</span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="mt-20 border-t border-slate-200 pt-8 pb-12 text-center text-slate-500 text-sm">
+            <p>Antigravity System Dashboard // Modern UI Canonical Standard</p>
+        </footer>
+    </div>
+
+</body>
+</html>

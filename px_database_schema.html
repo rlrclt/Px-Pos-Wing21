@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PX Database Schema & Data Dictionary - กองบิน 21 (Ultra-Lightweight Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+
+        h1, h2, h3, .font-heading {
+            font-family: 'Space Grotesk', 'IBM Plex Sans Thai', sans-serif;
+        }
+
+        code, pre, .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 3px;
+        }
+
+        .badge-pk {
+            background-color: rgba(248, 81, 73, 0.1);
+            color: #ff7b72;
+            border: 1px solid rgba(248, 81, 73, 0.4);
+        }
+        .badge-fk {
+            background-color: rgba(88, 166, 255, 0.1);
+            color: #79c0ff;
+            border: 1px solid rgba(88, 166, 255, 0.4);
+        }
+        .badge-req {
+            background-color: rgba(210, 153, 34, 0.1);
+            color: #e3b341;
+            border: 1px solid rgba(210, 153, 34, 0.4);
+        }
+        .badge-new {
+            background-color: rgba(63, 185, 80, 0.15);
+            color: #56d364;
+            border: 1px solid rgba(63, 185, 80, 0.4);
+        }
+        .badge-audit {
+            background-color: rgba(163, 113, 247, 0.15);
+            color: #d2a8ff;
+            border: 1px solid rgba(163, 113, 247, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-[#30363d] bg-[#161b22] px-6 py-4 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#58a6ff] text-lg">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-[#f0f6fc] flex items-center gap-2">
+                        PX Database Schema & Dictionary
+                        <span class="text-xs px-2 py-0.5 rounded bg-[#238636]/20 text-[#3fb950] border border-[#238636]/40 font-mono font-medium">v3.2 Ultra-Lightweight</span>
+                    </h1>
+                    <p class="text-xs text-[#8b949e]">สถาปัตยกรรมปรับแต่งประสิทธิภาพสูงสุด: ตัดเซลล์ว่าง, แยก Catalog, แคช ETag, โหลด 0.1s</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 text-xs font-mono">
+                <a href="px_tech_stack_architecture.html" class="px-3 py-1.5 rounded bg-[#1f6feb]/20 hover:bg-[#1f6feb]/30 text-[#58a6ff] border border-[#1f6feb]/40 font-medium transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-microchip"></i> Tech Stack Architecture
+                </a>
+                <a href="#mock-viewer" class="px-3 py-1.5 rounded bg-[#238636] hover:bg-[#2ea043] text-white font-medium transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-table-cells"></i> ดูตัวอย่างชีตจำลอง
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="lg:col-span-3 space-y-6">
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 sticky top-24 max-h-[85vh] overflow-y-auto">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-[#8b949e] mb-3 px-2">โครงสร้างตารางข้อมูลทั้งหมด (15 Tables)</div>
+                
+                <nav class="space-y-4">
+                    <div>
+                        <div class="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider px-2 mb-1.5">1. ตารางส่วนกลาง (Shared Master)</div>
+                        <ul class="space-y-1 text-sm font-mono">
+                            <li>
+                                <a href="#table-users" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-users-gear text-[#388bfd] w-4"></i> Users</span>
+                                    <span class="text-[10px] text-[#58a6ff]">สิทธิ์/ล็อกอิน</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-catalog" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-[#58a6ff] w-4"></i> Product_Catalog</span>
+                                    <span class="text-[10px] text-[#56d364]">แคตตาล็อก</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-stocks" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-[#e3b341] w-4"></i> Inventory_Stocks</span>
+                                    <span class="text-[10px] text-[#56d364]">สต็อก/ทุน</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-stock-in" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-truck-ramp-box text-[#39c5cf] w-4"></i> Stock_In_Logs</span>
+                                    <span class="text-[10px] text-[#8b949e]">รับของเข้า</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-write-off" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-trash-can text-[#f85149] w-4"></i> Stock_Write_Off</span>
+                                    <span class="text-[10px] text-[#ff7b72]">ตัดจ่ายชำรุด</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-sellers" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-user-tag text-[#bc8cff] w-4"></i> Sellers</span>
+                                    <span class="text-[10px] text-[#8b949e]">จ่าฝากขาย</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-batch-config" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-sliders text-[#d29922] w-4"></i> Batch_Config</span>
+                                    <span class="text-[10px] text-[#8b949e]">ผลัด/DailyLimit</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-promotions" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-tags text-[#f85149] w-4"></i> Promotions</span>
+                                    <span class="text-[10px] text-[#8b949e]">โปรโมชั่น</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pt-3 border-t border-[#30363d]">
+                        <div class="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider px-2 mb-1.5">2. ตารางเฉพาะผลัด (Batch-Specific)</div>
+                        <ul class="space-y-1 text-sm font-mono">
+                            <li>
+                                <a href="#table-soldiers" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-id-card text-[#3fb950] w-4"></i> Soldiers_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">2 กระเป๋าเงิน</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-credit-adjust" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-money-bill-transfer text-[#e3b341] w-4"></i> Credit_Logs_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">เติมเงิน/ปรับยอด</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-shifts" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-cash-register text-[#f0883e] w-4"></i> Shifts_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">กะแคชเชียร์</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-orders" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-receipt text-[#56d364] w-4"></i> Orders_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">หัวบิล</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-splits" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-users-viewfinder text-[#a371f7] w-4"></i> Splits_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">Party Mode</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-order-items" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-[#39c5cf] w-4"></i> Order_Items_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">ทุนประวัติศาสตร์</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-payroll" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-[#d2a8ff] w-4"></i> Payroll_*</span>
+                                    <span class="text-[10px] text-[#8b949e]">ส่งการเงิน</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#table-void-logs" class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#c9d1d9] hover:bg-[#21262d] hover:text-white transition-colors">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-[#ff7b72] w-4"></i> Void_Logs_*</span>
+                                    <span class="text-[10px] text-[#ff7b72]">ยกเลิก/คืนเงิน</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Schema Documentation -->
+        <main class="lg:col-span-9 space-y-12">
+            
+            <!-- Ultra-Lightweight Optimization Strategy -->
+            <section class="bg-[#161b22] border border-[#238636]/40 rounded-xl p-6 space-y-4">
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-1 rounded bg-[#238636]/20 text-[#3fb950] font-mono text-xs font-bold uppercase">Speed & Lightweight Engine</span>
+                    <h2 class="text-lg font-bold text-white">5 กฎเหล็กเพิ่มความเร็วและลดขนาดฐานข้อมูล (Ultra-Lightweight Rules)</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg">
+                        <div class="font-bold text-[#3fb950] mb-1"><i class="fa-solid fa-scissors mr-1"></i> 1. ตัดเซลล์และคอลัมน์ว่าง (Sheet Trimming)</div>
+                        <p class="text-[#8b949e]">สคริปต์ GAS จะสั่งลบคอลัมน์ว่างส่วนเกิน (เช่น คอลัมน์ L ถึง Z) และลบแถวว่างด้านล่างทิ้งทั้งหมด ลดภาระหน่วยความจำ Google ได้ทันที 80%</p>
+                    </div>
+                    <div class="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg">
+                        <div class="font-bold text-[#58a6ff] mb-1"><i class="fa-solid fa-pen-to-square mr-1"></i> 2. Write-Only Tables (บันทึกเข้าอย่างเดียว)</div>
+                        <p class="text-[#8b949e]">ตาราง <code>Orders</code>, <code>Order_Items</code>, <code>Splits</code> จะบันทึกแบบ Append แถวใหม่อย่างเดียว ไม่มีการดึงประวัติเก่าขึ้นมาวนลูปอ่านหน้าร้าน</p>
+                    </div>
+                    <div class="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg">
+                        <div class="font-bold text-[#e3b341] mb-1"><i class="fa-solid fa-filter mr-1"></i> 3. กรองเฉพาะ ACTIVE (Filtered Sync)</div>
+                        <p class="text-[#8b949e]">หน้าร้านดึงเฉพาะทหารที่ <code>status = ACTIVE</code> และสินค้าที่ <code>is_active = TRUE</code> ไม่ดาวน์โหลดข้อมูลที่ไม่ได้ใช้งาน</p>
+                    </div>
+                    <div class="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg">
+                        <div class="font-bold text-[#d2a8ff] mb-1"><i class="fa-solid fa-compact-disc mr-1"></i> 4. ETag & IndexedDB Cache (0 KB Transfer)</div>
+                        <p class="text-[#8b949e]">แคชข้อมูลสินค้าลงในเบราว์เซอร์ หากไม่มีการแก้ราคาขาย ระบบจะไม่ดาวน์โหลดข้อมูลใหม่ซ้ำเลย (Transfer = 0 Bytes)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. Master Shared Tables -->
+            <div class="space-y-8">
+                <div class="border-b border-[#30363d] pb-3 flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-[#f0f6fc] flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-[#58a6ff]"></span>
+                        1. ตารางส่วนกลาง (Shared Master Tables)
+                    </h2>
+                    <span class="text-xs font-mono text-[#8b949e]">คงอยู่ถาวร ใช้ร่วมกันทุกผลัด</span>
+                </div>
+
+                <!-- Table: Users (NEW RBAC) -->
+                <section id="table-users" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#388bfd]">Users</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">RBAC & Authentication</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Users (8 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ทะเบียนบัญชีผู้ใช้งานระบบ POS, Portal จ่า, และหน้าผู้ดูแลระบบ (Admin, Staff, Seller)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">user_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"USR-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสผู้ใช้งาน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">username</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">UNIQUE / REQ</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"cashier01" / "admin"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ชื่อบัญชีผู้ใช้ หรือ อีเมลสำหรับล็อกอิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">pin_hash</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"hash_1234"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสผ่าน Hash หรือ PIN 4 หลัก (สำหรับแคชเชียร์สลับกะเร็ว)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">full_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ส.อ. สมเกียรติ ยิ้มแย้ม"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยศ-ชื่อ-สกุล ผู้ใช้งาน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">role</td>
+                                    <td class="py-2.5 px-4 text-[#f0883e]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ADMIN|STAFF|SELLER</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"STAFF"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ระดับสิทธิ์ (ADMIN: ควบคุมระบบ, STAFF: แคชเชียร์, SELLER: จ่าเจ้าของสินค้า)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Sellers</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01" / null</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสผู้ฝากขาย (เฉพาะกรณี role = 'SELLER' เพื่อดูยอดเฉพาะร้านตัวเอง)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">avatar_url</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"https://.../avatars/user01.jpg"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">URL รูปโปรไฟล์ผู้ใช้งาน (สำหรับแสดงมุมขวาบน POS/Portal)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_active</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะการอนุญาตเข้าใช้งานระบบ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Product_Catalog (NEW SPLIT) -->
+                <section id="table-catalog" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#58a6ff]">Product_Catalog</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">POS Facing (เร็ว 0.05s)</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Product_Catalog (8 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">แคตตาล็อกสินค้าหน้าร้าน (ชื่อ, รูป, ราคาขาย, หน่วยนับ, หมวดหมู่, อัตราแตกหน่วย) โหลดแคชเข้า LocalStorage ได้ทันที</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401" / "PLU-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบาร์โค้ดสินค้า หรือรหัสลัด PLU สำหรับสินค้าไม่มีบาร์โค้ด</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">product_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"นมถั่วเหลือง UHT 250ml"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ชื่อสินค้าที่แสดงบนหน้าจอ POS และใบเสร็จ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">image_url</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"https://.../img/soy_milk.jpg"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">URL รูปปกสินค้าสำหรับแสดงบนปุ่มลัด POS</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">unit_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"กล่อง"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">หน่วยนับ เช่น กล่อง, ขวด, แพ็ค, ซอง</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">selling_price</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">20.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาขายหน้าร้าน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">category</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"เครื่องดื่ม" / "SERVICE"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">หมวดหมู่สำหรับจัดกลุ่มปุ่มลัด (ถ้าเป็น SERVICE จะไม่ตัดสต็อก)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">parent_barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Inventory.barcode</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสสินค้าแม่ในสต็อก กรณีเป็นแพ็ค/ลัง (ถ้าเป็นสินค้าเดี่ยวให้เว้นว่าง)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">conversion_factor</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 1</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">6</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ตัวคูณตัดสต็อกสินค้าแม่ (เช่น ขายแพ็ค 6 ให้ใส่ 6 เพื่อไปตัดสต็อกสินค้าแม่ 6 ชิ้น)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_active</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะเปิด/ปิดขายสินค้านี้ (TRUE = เปิดขายหน้าร้าน, FALSE = ระงับการขาย)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Inventory_Stocks (NEW SPLIT) -->
+                <section id="table-stocks" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#e3b341]">Inventory_Stocks</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">Back-office & Costing</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Inventory_Stocks (5 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">สต็อกคงเหลือจริงเฉพาะ Base Barcode, ราคาทุนปัจจุบัน, และ Ref จ่าเจ้าของสินค้า (GP ดึงจาก Sellers)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4">
+                                        <span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PK</span>
+                                        <span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">BASE BARCODE</span>
+                                    </td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบาร์โค้ดหน่วยย่อยสุด (สินค้าแพ็คไม่ต้องมีแถวในตารางนี้)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">stock_qty</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">48</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนสต็อกคงเหลือจริงในคลัง (หน่วยย่อยสุด)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cost_price</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">16.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาทุนล่าสุดต่อหน่วยย่อยที่รับมาจากจ่า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Sellers</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสจ่าเจ้าของสินค้า (ใช้ Ref ไปดึง GP % จากตาราง Sellers อัตโนมัติ)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">low_stock_threshold</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 5</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">5</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เกณฑ์จำนวนขั้นต่ำเพื่อแจ้งเตือนของใกล้หมด</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Stock_In_Logs -->
+                <section id="table-stock-in" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#39c5cf]">Stock_In_Logs</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">ตารางส่วนกลาง</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Stock_In_Logs</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ประวัติการรับสินค้าเข้าสต็อกของจ่าแต่ละคน (มีวันเวลา, จำนวนที่เติม, ราคาทุนที่ตกลง)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">log_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"STK-20260901-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบันทึกการรับสินค้า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">received_at</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-01T09:00:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเวลาที่นำสินค้ามาส่งเข้าร้าน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Product_Catalog</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบาร์โค้ดสินค้าที่เติม</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">quantity_added</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">50</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่นำมาเติมในรอบนี้</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cost_price_at_time</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">16.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาทุนต่อหน่วย ณ วันที่ส่งของ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Sellers</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสจ่าผู้นำของมาส่ง</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">received_by</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"จ.อ. วรเมธ"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ชื่อเจ้าหน้าที่ PX ผู้ตรวจรับของ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Stock_Write_Off_Logs (NEW WRITE-OFF) -->
+                <section id="table-write-off" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#f85149]">Stock_Write_Off_Logs</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">ตารางส่วนกลาง (Loss Management)</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Stock_Write_Off_Logs (10 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ประวัติการตัดจ่ายสินค้าชำรุด, นม/ขนมหมดอายุ, หรือเบิกใช้ในการฝึก พร้อมระบุผู้รับภาระต้นทุน (จ่า หรือ กองร้อย)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">write_off_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"WO-20260907-001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสใบตัดจ่ายสินค้า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Inventory.barcode</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสสินค้าหน่วยย่อยที่ต้องการตัดจ่าย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">quantity</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">5</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่ตัดจ่ายออกจากสต็อกคลัง</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cost_price_unit</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">16.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาทุนต่อหน่วย ณ เวลาตัดจ่าย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">total_loss_value</td>
+                                    <td class="py-2.5 px-4 text-[#f85149]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CALCULATED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">80.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">มูลค่าความเสียหายรวม (quantity * cost_price_unit)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">reason</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">EXPIRED|DAMAGED|...</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"EXPIRED"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สาเหตุ: EXPIRED (หมดอายุ), DAMAGED (แตก/ชำรุด), INTERNAL_USE (ใช้ในกองร้อย), LOST (สูญหาย)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cost_absorbed_by</td>
+                                    <td class="py-2.5 px-4 text-[#f0883e]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">SELLER|UNIT</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"SELLER"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ผู้แบกรับต้นทุน (SELLER: จ่ารับผิดชอบเอง ไม่จ่ายทุนคืน, UNIT: กองร้อยชดเชยจ่ายทุนให้จ่า)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Sellers</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสจ่าเจ้าของสินค้า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">authorized_by</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ร.อ. ภาคภูมิ"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">นายทหาร/จ่าเวรที่เซ็นอนุมัติตัดจ่าย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">timestamp</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T14:30:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเวลาที่ทำการตัดจ่าย</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Sellers -->
+                <section id="table-sellers" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#bc8cff]">Sellers</h3>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Sellers (6 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ทะเบียนรายชื่อจ่าที่นำสินค้ามาฝากขาย พร้อมข้อมูลติดต่อ ส่วนแบ่ง GP และโลโก้/โปรไฟล์ร้าน</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสประจำตัวผู้ฝากขาย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"จ่าสิบเอก สมชาย (ร้านขนม)"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยศ ชื่อ-นามสกุล / ชื่อร้านจ่าเจ้าของสินค้า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">contact_info</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"081-234-5678 / LINE: somchai_px"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เบอร์โทรศัพท์ / ช่องทางติดต่อ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">default_fee_pct</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0.10</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">0.10</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">อัตราค่า GP มาตรฐานของร้านนี้ (10% = 0.10)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">avatar_url</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"https://.../avatars/seller_s01.jpg"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">URL รูปโปรไฟล์ / โลโก้ร้านค้า</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_active</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะการเป็นคู่ค้าฝากขาย</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Batch_Config -->
+                <section id="table-batch-config" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#d29922]">Batch_Config</h3>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Batch_Config</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ตั้งค่าผลัดฝึกปัจจุบัน พร้อมกำหนดวงเงินใช้จ่ายสูงสุดต่อวัน (Daily Limit)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">batch_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2569_1"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสผลัดฝึก (ใช้เป็น Suffix ต่อท้ายชื่อชีต)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">year</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2569"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ปี พ.ศ. ของรุ่นฝึก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">batch_no</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"1"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ผลัดที่ (1 หรือ 2)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">daily_limit_thb</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-new px-1.5 py-0.5 rounded text-[10px]">ฟิลด์ใหม่</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">150.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำกัดยอดใช้เครดิตสูงสุดต่อคน/วัน (0 = ไม่จำกัด)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_active_batch</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะผลัดปัจจุบันที่เปิดระบบอยู่</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Promotions -->
+                <section id="table-promotions" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#f85149]">Promotions</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">ตารางส่วนกลาง</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Promotions (11 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">โปรโมชั่นและส่วนลด เช่น ซื้อ 1 แถม 1 (BOGO) พร้อมระบุว่ากองร้อยหรือจ่าเป็นผู้ออกค่าส่วนลด</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">promo_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"P-BOGO-COKE"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสโปรโมชั่น</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">promo_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ซื้อ 1 แถม 1 โค้กกระป๋อง"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ชื่อโปรโมชั่นแสดงหน้าร้าน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">promo_type</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">BOGO | DISCOUNT_PCT | ...</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"BOGO"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ประเภท: BOGO (1แถม1), DISCOUNT_PCT (ลด%), CLEARANCE</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">target_barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Catalog.barcode</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบาร์โค้ดสินค้าที่ร่วมโปร</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">buy_qty</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 1</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">1</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่ต้องซื้อ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">free_qty</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">1</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่แถมฟรี</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">discount_pct</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0.00</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">0.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">% ส่วนลด (ถ้าเป็นแบบลดราคา)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">absorbed_by</td>
+                                    <td class="py-2.5 px-4 text-[#f0883e]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">UNIT | SELLER | SHARED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"UNIT"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ผู้รับภาระส่วนลด (UNIT: กองร้อยออก, SELLER: จ่าออก)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">start_date</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATE</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">YYYY-MM-DD</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเริ่มต้นโปรโมชั่น</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">end_date</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATE</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">YYYY-MM-DD</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-30"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันสิ้นสุดโปรโมชั่น</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_active</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะเปิด/ปิดโปรโมชั่น</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 2. Batch-Specific Tables -->
+            <div class="space-y-8 pt-6">
+                <div class="border-b border-[#30363d] pb-3 flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-[#f0f6fc] flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-[#3fb950]"></span>
+                        2. ตารางเฉพาะผลัด (Batch-Specific Tables: *_2569_1)
+                    </h2>
+                    <span class="text-xs font-mono text-[#3fb950]">โคลนอัตโนมัติจาก Template เมื่อขึ้นผลัดใหม่</span>
+                </div>
+
+                <!-- Table: Soldiers_xxxx -->
+                <section id="table-soldiers" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#3fb950]">Soldiers_XXXX_X</h3>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Soldiers_2569_1 (10 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ทะเบียนทหารใหม่ในผลัด พร้อมระบบแยก 2 กระเป๋าเงิน (สวัสดิการหักเงินเดือน vs เงินสดเติมเอง)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">px_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"691042"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสประจำตัวทหาร PX (ใช้สแกนบาร์โค้ดบัตร)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">national_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-audit px-1.5 py-0.5 rounded text-[10px]">13 DIGITS</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"1349900123456"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เลขประจำตัวประชาชน 13 หลัก (ส่งการเงินกองบิน)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">full_name</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"พลฯ สมชาย สายลม"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยศ ชื่อ-สกุล ทหารใหม่</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">unit</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ร้อย 1 หมวด 2"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สังกัดกองร้อย / หมวดฝึก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">credit_limit</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 2000.00</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">2000.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วงเงินเครดิตสวัสดิการตั้งต้นประจำเดือน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">deductions</td>
+                                    <td class="py-2.5 px-4 text-[#ff7b72]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0.00</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">300.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รายการหักส่วนกลาง (ตัดผม 100, ซักรีด 200)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">credit_allowance_balance</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-audit px-1.5 py-0.5 rounded text-[10px]">WALLET 1</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">820.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเครดิตสวัสดิการคงเหลือ (ยอดนี้ใช้ไปเท่าไหร่ หักเงินเดือนจริง)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cash_wallet_balance</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-audit px-1.5 py-0.5 rounded text-[10px]">WALLET 2</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">200.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเงินสดที่ทหารเติมเข้าไปเอง (ยอดนี้ไม่นำไปหักเงินเดือน)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">photo_url</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"https://.../photos/691042.jpg"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">URL รูปถ่ายหน้าตรงประจำตัวทหาร (สำหรับแสดงบนหน้าจอแคชเชียร์ตรวจสอบใบหน้า)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">status</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ACTIVE / SUSPENDED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ACTIVE"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะทหาร (หากป่วย/กักบริเวณ จะเป็น SUSPENDED ห้ามซื้อ)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Credit_Logs_xxxx -->
+                <section id="table-credit-adjust" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#e3b341]">Credit_Logs_XXXX_X</h3>
+                                <span class="badge-audit px-2 py-0.5 text-[10px] rounded font-bold">Audit Trail</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Credit_Logs_2569_1 (10 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">สมุดบัญชีบันทึกประวัติการใช้จ่าย, เติมเงินสด, และคืนเงิน (Refund) ตรวจสอบยอดเงินก่อน-หลังทำรายการ</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">log_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CL-20260907-001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบันทึกธุรกรรมการเงิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">px_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Soldiers.px_code</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"691042"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสทหารเจ้าของกระเป๋าเงิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">txn_type</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">TOPUP | DEDUCT | REFUND</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"DEDUCT"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ประเภท: DEDUCT (ตัดซื้อของ), TOPUP (เติมเงินสด), REFUND (คืนเงิน)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">wallet_type</td>
+                                    <td class="py-2.5 px-4 text-[#f0883e]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CREDIT_ALLOWANCE | CASH_WALLET</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CREDIT_ALLOWANCE"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">กระเป๋าที่ทำรายการ (สวัสดิการ หรือ เงินสดเติม)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">amount</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">120.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนเงินที่ทำรายการ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">balance_before</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">940.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเงินคงเหลือก่อนทำรายการ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">balance_after</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">820.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเงินคงเหลือหลังทำรายการ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">ref_order_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Orders.order_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ORD-2569-1-0001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เลขอ้างอิงบิลขาย (กรณีเกิดจากการซื้อของ)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">recorded_by</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ส.อ. สมเกียรติ"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ผู้บันทึกรายการ/แคชเชียร์</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">timestamp</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T13:45:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเวลาที่เกิดธุรกรรม</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Shifts_xxxx -->
+                <section id="table-shifts" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#f0883e]">Shifts_XXXX_X</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">กะแคชเชียร์ & เงินสด</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Shifts_2569_1 (10 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">บันทึกเปิด-ปิดกะของแคชเชียร์ เงินทอนเริ่มต้น และกระทบยอดเงินสดนับได้จริง (Cash Drawer Reconciliation)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">shift_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"SHIFT-20260907-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสกะการขาย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cashier_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Users.user_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"USR-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสแคชเชียร์ประจำกะ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">terminal_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">POS-01 | POS-02</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"POS-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จุดเครื่องขายหน้าร้าน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">opened_at</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T08:00:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เวลาเปิดกะ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">closed_at</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T17:00:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เวลาปิดกะ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">starting_cash_float</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">1,000.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เงินทอนเริ่มต้นในลิ้นชัก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">total_cash_sales</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">SYSTEM SUM</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">4,500.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดขายเงินสดรวมตามระบบในกะนี้</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">actual_cash_counted</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">5,500.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเงินสดที่แคชเชียร์นับได้จริงตอนปิดกะ</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cash_difference</td>
+                                    <td class="py-2.5 px-4 text-[#ff7b72]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CALCULATED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">0.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ผลต่างเงินสด (actual - (float + sales)) ขาด/เกิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">status</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">OPEN | CLOSED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CLOSED"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะกะ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Orders_xxxx -->
+                <section id="table-orders" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#56d364]">Orders_XXXX_X</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">Write-Only</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Orders_2569_1 (11 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ประวัติหัวบิลการขาย บันทึกแบบ Append แถวใหม่อย่างเดียว ไม่มีการวนลูปอ่านหน้าร้าน</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">order_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ORD-2569-1-0001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบิลหลัก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">order_datetime</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T14:15:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเวลาที่เปิดบิล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cashier_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Users.user_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"USR-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสแคชเชียร์ผู้ขาย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">shift_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Shifts.shift_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"SHIFT-20260907-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสกะแคชเชียร์</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">primary_buyer_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Soldiers.px_code</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"691042"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสผู้ซื้อหลัก / ผู้ถือบิล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">total_amount</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">100.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดรวมเต็มก่อนหักส่วนลด</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">discount_total</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0.00</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">0.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ส่วนลดรวมทั้งบิล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">net_amount</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">100.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดสุทธิที่ต้องชำระจริง</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">payment_method</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CREDIT | CASH | TRANSFER | MIXED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CREDIT"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วิธีชำระเงินหลัก (รวมกรณี MIXED 2 กระเป๋า)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_party_split</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: FALSE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">FALSE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">บิลนี้มีการหารหลายคนหรือไม่</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">status</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">COMPLETED | VOIDED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"COMPLETED"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะบิล</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Order_Splits_xxxx -->
+                <section id="table-splits" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#a371f7]">Order_Splits_XXXX_X</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">Party Split Engine</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Order_Splits_2569_1 (8 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">รายละเอียดการหารบิลรายบุคคล บันทึกยอดที่แต่ละคนจ่าย และวิธีชำระเงิน (เศษสตางค์ปัดเข้า Host)</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">split_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"SPLIT-ORD0001-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสการหารรายบุคคล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">order_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Orders.order_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ORD-2569-1-0001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบิลหลักที่ร่วมหาร</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">participant_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Soldiers.px_code</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"691042"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบาร์โค้ดทหารผู้ร่วมหาร</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">split_type</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">EQUAL | FIXED | PERCENT</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"EQUAL"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ประเภทการหาร (หารเท่า, ระบุยอด, ระบุ%)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">amount_assigned</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">33.34</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนเงินที่ต้องชำระ (Host รับเศษสตางค์)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">payment_method</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">ENUM</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CREDIT | CASH</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CREDIT"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วิธีชำระของผู้ร่วมหารคนนี้</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_paid</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: TRUE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">TRUE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ชำระสำเร็จเรียบร้อย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">paid_at</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T14:15:05Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เวลาที่ตัดเงินสำเร็จ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Order_Items_xxxx -->
+                <section id="table-order-items" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#39c5cf]">Order_Items_XXXX_X</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">Historical Cost Snapshot</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Order_Items_2569_1 (11 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">รายการสินค้าในแต่ละบิล บันทึกราคาทุน ณ วินาทีที่ขายจริง ป้องกันกำไรของจ่าผิดเพี้ยนเมื่อมีการเปลี่ยนราคาทุนในอนาคต</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">item_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ITEM-ORD0001-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสรายการสินค้าในบิล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">order_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Orders.order_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ORD-2569-1-0001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบิลหลัก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">barcode</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Catalog.barcode</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"8850123401"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสสินค้าที่ขาย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">actual_qty</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">2</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่ลูกค้ารับจริง (รวมของแถม)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">charged_qty</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">INTEGER</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">1</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">จำนวนชิ้นที่คิดเงิน (กรณี BOGO 1 แถม 1 คิดเงิน 1)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">cost_price_at_sale</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-audit px-1.5 py-0.5 rounded text-[10px]">COST SNAPSHOT</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">16.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาทุนต่อหน่วย ณ วินาทีที่ขาย (ล็อคต้นทุนกำไรจ่า)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">unit_price</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">20.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ราคาขายปลีกต่อหน่วย</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">discount_amount</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: 0.00</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">0.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ส่วนลดเฉพาะรายการนี้</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">subtotal</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">20.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดรวมไอเทม (charged_qty * unit_price - discount)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">seller_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Sellers.seller_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"S01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสจ่าเจ้าของสินค้านี้ (เพื่อสรุปยอดจ่ายเงินคืน)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_voided</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: FALSE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">FALSE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะถูกยกเลิก/คืนเงินเฉพาะรายการนี้ (Partial Void Flag)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Payroll_Settlement_xxxx -->
+                <section id="table-payroll" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#d2a8ff]">Payroll_Settlement_XXXX_X</h3>
+                                <span class="badge-audit px-2 py-0.5 text-[10px] rounded font-bold">ส่งการเงินกองบิน</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Payroll_2569_1</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ตารางสรุปยอดหักเงินเดือนและเบี้ยเลี้ยงประจำเดือน เพื่อส่งฝ่ายการเงินกองบิน 21 โอนเงินเข้าบัญชีทหาร</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">settlement_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"PAY-256909-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสรอบการตัดเงินเดือน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">px_code</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Soldiers</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"691042"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสประจำตัวทหาร PX</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">national_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"1349900123456"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เลขประจำตัวประชาชน 13 หลัก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">salary_base</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">10,000.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ฐานเงินเดือนและเบี้ยเลี้ยงตั้งต้น</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">total_credit_used</td>
+                                    <td class="py-2.5 px-4 text-[#ff7b72]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CALCULATED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">1,180.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดใช้สวัสดิการ PX จริง (2,000 - 820)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">mandatory_deductions</td>
+                                    <td class="py-2.5 px-4 text-[#ff7b72]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">300.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รายการหักส่วนกลางประจำเดือน (ตัดผม/ซักรีด)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">net_salary_payout</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">NET PAYOUT</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">8,520.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เงินเดือนสุทธิที่การเงินต้องโอนจริง (10,000 - 1,180 - 300)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">status</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">PENDING / CLEARED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CLEARED"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">สถานะการโอนเงินของฝ่ายการเงิน</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Table: Void_Logs_xxxx -->
+                <section id="table-void-logs" class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-[#30363d] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-base font-bold font-mono text-[#ff7b72]">Void_Logs_XXXX_X</h3>
+                                <span class="badge-new px-2 py-0.5 text-[10px] rounded font-bold">Auto Refund & Restock</span>
+                                <span class="px-2 py-0.5 text-[11px] rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">ชีต: Void_Logs_2569_1 (10 คอลัมน์)</span>
+                            </div>
+                            <p class="text-xs text-[#8b949e] mt-1">ประวัติการยกเลิกบิล / คืนเงินเฉพาะชิ้น พร้อมระบบคืนวงเงินทหารอัตโนมัติและบวกสต็อกคืนคลัง</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#0d1117] text-xs font-mono text-[#8b949e] uppercase border-b border-[#30363d]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Column Name</th>
+                                    <th class="py-2.5 px-4">Data Type</th>
+                                    <th class="py-2.5 px-4">Constraints</th>
+                                    <th class="py-2.5 px-4">Sample Data</th>
+                                    <th class="py-2.5 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] font-mono text-xs">
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">void_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-pk px-1.5 py-0.5 rounded text-[10px]">PRIMARY KEY</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"VOID-20260907-001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบันทึกการยกเลิก/คืนเงิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">order_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-fk px-1.5 py-0.5 rounded text-[10px]">REF -> Orders.order_id</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ORD-2569-1-0001"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสบิลที่ถูกยกเลิกหรือคืนเงิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">item_id</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">OPTIONAL</td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ITEM-ORD0001-01"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">รหัสรายการสินค้า (กรณีคืนเฉพาะบางชิ้น ถ้าคืนทั้งบิลให้เว้นว่าง)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">is_partial</td>
+                                    <td class="py-2.5 px-4 text-[#e3b341]">BOOLEAN</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">DEFAULT: FALSE</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">FALSE</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">TRUE = คืนเฉพาะบางชิ้น, FALSE = ยกเลิกทั้งบิล</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">refund_amount</td>
+                                    <td class="py-2.5 px-4 text-[#56d364]">NUMBER (2 dec)</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">60.00</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ยอดเงินที่คืนให้ทหาร (โอนกลับเข้ากระเป๋าสวัสดิการอัตโนมัติ)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">voided_by</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ส.อ. วรเมธ"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">แคชเชียร์ผู้ทำรายการคืน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">authorized_by</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ADMIN / OFFICER</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"ร.อ. ภาคภูมิ"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">นายทหาร/จ่าเวรผู้อนุมัติการยกเลิก</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">void_reason</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">REQUIRED</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"สแกนบาร์โค้ดเบิ้ล"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">เหตุผลในการยกเลิกหรือคืนเงิน</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">refund_method</td>
+                                    <td class="py-2.5 px-4 text-[#79c0ff]">STRING</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">CREDIT | CASH</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"CREDIT"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">ช่องทางการคืนเงิน (คืนเข้าวงเงิน หรือ คืนเงินสด)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-4 font-semibold text-[#f0f6fc]">voided_at</td>
+                                    <td class="py-2.5 px-4 text-[#d2a8ff]">DATETIME</td>
+                                    <td class="py-2.5 px-4"><span class="badge-req px-1.5 py-0.5 rounded text-[10px]">ISO 8601</span></td>
+                                    <td class="py-2.5 px-4 text-[#8b949e]">"2026-09-07T14:35:00Z"</td>
+                                    <td class="py-2.5 px-4 text-[#c9d1d9] font-sans">วันเวลาที่ยกเลิกรายการ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Interactive Mock Sheet Viewer -->
+            <section id="mock-viewer" class="pt-8 border-t border-[#30363d] space-y-4">
+                <div>
+                    <h2 class="text-xl font-bold text-[#f0f6fc] flex items-center gap-2">
+                        <i class="fa-solid fa-table text-[#3fb950]"></i>
+                        ตัวอย่างแถวข้อมูลจริงใน Google Sheets (Mock Sheet Viewer)
+                    </h2>
+                    <p class="text-xs text-[#8b949e] mt-1">คลิกแท็บเพื่อดูหน้าตาข้อมูลจริงที่ระบบจะบันทึกลงในแต่ละชีต</p>
+                </div>
+
+                <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+                    <!-- Sheet Tabs Header -->
+                    <div class="flex flex-wrap border-b border-[#30363d] bg-[#0d1117] px-2 pt-2 gap-1 text-xs font-mono">
+                        <button onclick="switchTab('sheet-catalog')" id="tab-btn-catalog" class="px-3 py-1.5 rounded-t bg-[#161b22] border-t border-l border-r border-[#30363d] text-[#58a6ff] font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group"></i> Product_Catalog
+                        </button>
+                        <button onclick="switchTab('sheet-stocks')" id="tab-btn-stocks" class="px-3 py-1.5 rounded-t text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#161b22]/50 flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-boxes-stacked"></i> Inventory_Stocks
+                        </button>
+                        <button onclick="switchTab('sheet-soldiers')" id="tab-btn-soldiers" class="px-3 py-1.5 rounded-t text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#161b22]/50 flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-id-card"></i> Soldiers_2569_1
+                        </button>
+                        <button onclick="switchTab('sheet-payroll')" id="tab-btn-payroll" class="px-3 py-1.5 rounded-t text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#161b22]/50 flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-file-invoice-dollar"></i> Payroll_2569_1
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Product Catalog Sheet -->
+                    <div id="sheet-catalog" class="overflow-x-auto p-4">
+                        <table class="w-full text-left font-mono text-xs border border-[#30363d]">
+                            <thead class="bg-[#0d1117] text-[#58a6ff] border-b border-[#30363d]">
+                                <tr>
+                                    <th class="p-2 border-r border-[#30363d]">barcode</th>
+                                    <th class="p-2 border-r border-[#30363d]">product_name</th>
+                                    <th class="p-2 border-r border-[#30363d]">unit_name</th>
+                                    <th class="p-2 border-r border-[#30363d]">selling_price</th>
+                                    <th class="p-2 border-r border-[#30363d]">category</th>
+                                    <th class="p-2">parent_barcode</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                                <tr>
+                                    <td class="p-2 border-r border-[#30363d] text-[#58a6ff]">8850123401</td>
+                                    <td class="p-2 border-r border-[#30363d] font-sans">นมถั่วเหลือง UHT 250ml</td>
+                                    <td class="p-2 border-r border-[#30363d]">กล่อง</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#56d364]">20.00</td>
+                                    <td class="p-2 border-r border-[#30363d] font-sans">เครื่องดื่ม</td>
+                                    <td class="p-2 text-[#8b949e]">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border-r border-[#30363d] text-[#58a6ff]">8850123499</td>
+                                    <td class="p-2 border-r border-[#30363d] font-sans">นมถั่วเหลือง UHT (แพ็ค 6 กล่อง)</td>
+                                    <td class="p-2 border-r border-[#30363d]">แพ็ค</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#56d364]">115.00</td>
+                                    <td class="p-2 border-r border-[#30363d] font-sans">เครื่องดื่ม</td>
+                                    <td class="p-2 text-[#79c0ff]">8850123401 (ตัด 6 ชิ้น)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tab 2: Inventory Stocks Sheet -->
+                    <div id="sheet-stocks" class="overflow-x-auto p-4 hidden">
+                        <table class="w-full text-left font-mono text-xs border border-[#30363d]">
+                            <thead class="bg-[#0d1117] text-[#e3b341] border-b border-[#30363d]">
+                                <tr>
+                                    <th class="p-2 border-r border-[#30363d]">barcode</th>
+                                    <th class="p-2 border-r border-[#30363d]">stock_qty</th>
+                                    <th class="p-2 border-r border-[#30363d]">cost_price</th>
+                                    <th class="p-2 border-r border-[#30363d]">seller_id</th>
+                                    <th class="p-2">GP %</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                                <tr>
+                                    <td class="p-2 border-r border-[#30363d] text-[#58a6ff]">8850123401</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#d2a8ff]">48 กล่อง</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right">16.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-[#bc8cff]">S01 (จ่าประสิทธิ์)</td>
+                                    <td class="p-2 text-right">5%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tab 3: Soldiers Sheet -->
+                    <div id="sheet-soldiers" class="overflow-x-auto p-4 hidden">
+                        <table class="w-full text-left font-mono text-xs border border-[#30363d]">
+                            <thead class="bg-[#0d1117] text-[#3fb950] border-b border-[#30363d]">
+                                <tr>
+                                    <th class="p-2 border-r border-[#30363d]">px_code</th>
+                                    <th class="p-2 border-r border-[#30363d]">national_id</th>
+                                    <th class="p-2 border-r border-[#30363d]">full_name</th>
+                                    <th class="p-2 border-r border-[#30363d]">credit_allowance</th>
+                                    <th class="p-2 border-r border-[#30363d]">cash_wallet</th>
+                                    <th class="p-2 border-r border-[#30363d]">photo_url</th>
+                                    <th class="p-2">status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                                <tr>
+                                    <td class="p-2 border-r border-[#30363d] font-semibold text-[#58a6ff]">691042</td>
+                                    <td class="p-2 border-r border-[#30363d]">1349900123456</td>
+                                    <td class="p-2 border-r border-[#30363d] font-sans">พลฯ สมชาย สายลม</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#3fb950]">820.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#e3b341]">200.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-xs text-[#8b949e]">https://.../691042.jpg</td>
+                                    <td class="p-2 text-[#3fb950] font-bold">ACTIVE</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tab 4: Payroll Sheet -->
+                    <div id="sheet-payroll" class="overflow-x-auto p-4 hidden">
+                        <table class="w-full text-left font-mono text-xs border border-[#30363d]">
+                            <thead class="bg-[#0d1117] text-[#d2a8ff] border-b border-[#30363d]">
+                                <tr>
+                                    <th class="p-2 border-r border-[#30363d]">px_code</th>
+                                    <th class="p-2 border-r border-[#30363d]">national_id</th>
+                                    <th class="p-2 border-r border-[#30363d]">salary_base</th>
+                                    <th class="p-2 border-r border-[#30363d]">total_credit_used</th>
+                                    <th class="p-2 border-r border-[#30363d]">deductions</th>
+                                    <th class="p-2 border-r border-[#30363d]">net_salary_payout</th>
+                                    <th class="p-2">status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                                <tr>
+                                    <td class="p-2 border-r border-[#30363d] text-[#58a6ff]">691042</td>
+                                    <td class="p-2 border-r border-[#30363d]">1349900123456</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right">10,000.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right text-[#ff7b72]">-1,180.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right text-[#ff7b72]">-300.00</td>
+                                    <td class="p-2 border-r border-[#30363d] text-right font-bold text-[#3fb950]">8,520.00</td>
+                                    <td class="p-2 text-[#3fb950] font-bold">CLEARED</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#30363d] py-6 text-center text-xs text-[#8b949e] bg-[#0d1117] mt-16 font-mono">
+        PX SYSTEM DATABASE ARCHITECTURE // ULTRA-LIGHTWEIGHT MILITARY GRADE v3.2
+    </footer>
+
+    <!-- Interactive Tab Script -->
+    <script>
+        function switchTab(tabId) {
+            const tabs = ['sheet-catalog', 'sheet-stocks', 'sheet-soldiers', 'sheet-payroll'];
+            const btnMap = {
+                'sheet-catalog': 'tab-btn-catalog',
+                'sheet-stocks': 'tab-btn-stocks',
+                'sheet-soldiers': 'tab-btn-soldiers',
+                'sheet-payroll': 'tab-btn-payroll'
+            };
+
+            tabs.forEach(id => {
+                const el = document.getElementById(id);
+                const btn = document.getElementById(btnMap[id]);
+                if (id === tabId) {
+                    el.classList.remove('hidden');
+                    btn.className = "px-3 py-1.5 rounded-t bg-[#161b22] border-t border-l border-r border-[#30363d] text-[#58a6ff] font-bold flex items-center gap-2";
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = "px-3 py-1.5 rounded-t text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#161b22]/50 flex items-center gap-2 transition-colors";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

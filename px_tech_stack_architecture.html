@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PX Tech Stack & Architecture - กองบิน 21 (Modern PWA Local-First)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0b0f17;
+            color: #c9d1d9;
+        }
+
+        h1, h2, h3, .font-heading {
+            font-family: 'Space Grotesk', 'IBM Plex Sans Thai', sans-serif;
+        }
+
+        code, pre, .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #21262d;
+            border-radius: 3px;
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.25);
+        }
+        .glow-green {
+            box-shadow: 0 0 25px -5px rgba(34, 197, 94, 0.25);
+        }
+        .glow-purple {
+            box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.25);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-600 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-[#21262d] bg-[#111622]/90 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-lg">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                        PX Tech Stack & System Architecture
+                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono">Option 1: Modern PWA Local-First</span>
+                    </h1>
+                    <p class="text-xs text-[#8b949e]">สถาปัตยกรรมระบบ POS สวัสดิการทหารใหม่ กองบิน 21 (Zero Server Cost • Offline 100% • 0-Lag)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 font-mono text-xs">
+                <a href="px_database_schema.html" target="_blank" class="px-3 py-1.5 rounded-lg bg-[#1c212c] hover:bg-[#262c3b] border border-[#30363d] text-cyan-300 font-medium transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-database"></i> Database Schema (15 Tables)
+                </a>
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Verified 17/17 Tests
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-12">
+
+        <!-- 1. Executive Topology Overview -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between border-b border-[#21262d] pb-3">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                        1. แผนผังภาพรวมสถาปัตยกรรม (System Topology)
+                    </h2>
+                    <p class="text-xs text-[#8b949e]">การทำงานแบบ Local-First: ยิงบิลออฟไลน์ในเครื่อง และ Background Sync ไปยัง Google Sheets</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Layer 1: Client Devices -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-2xl p-5 relative overflow-hidden glow-cyan">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-bl-full pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-semibold">LAYER 1: CLIENT</span>
+                        <i class="fa-solid fa-desktop text-cyan-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Modern Web PWA</h3>
+                    <p class="text-xs text-[#8b949e] leading-relaxed mb-4">
+                        แอปเว็บแบบติดตั้งได้ (Installable PWA) ทำงานบนแท็บเล็ต, คอมพิวเตอร์แคชเชียร์, มือถือจ่า และ Kiosk ทหาร
+                    </p>
+                    <ul class="space-y-2 text-xs font-mono text-[#c9d1d9]">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400 text-[10px]"></i> React 19 + TypeScript 5</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400 text-[10px]"></i> Tailwind CSS + Framer Motion</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400 text-[10px]"></i> Web Serial / Web Bluetooth Print</li>
+                    </ul>
+                </div>
+
+                <!-- Layer 2: Offline Engine -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-2xl p-5 relative overflow-hidden glow-green">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold">LAYER 2: LOCAL DB</span>
+                        <i class="fa-solid fa-hard-drive text-emerald-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">IndexedDB & Sync Queue</h3>
+                    <p class="text-xs text-[#8b949e] leading-relaxed mb-4">
+                        ฐานข้อมูลในเบราว์เซอร์ เก็บ Catalog และคิวบิลออฟไลน์ ทำงานได้ 100% แม้ไม่มีสัญญาณอินเทอร์เน็ต
+                    </p>
+                    <ul class="space-y-2 text-xs font-mono text-[#c9d1d9]">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i> Dexie.js (IndexedDB ORM)</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i> Zustand Offline Store</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i> Atomic Satang Split Engine</li>
+                    </ul>
+                </div>
+
+                <!-- Layer 3: Cloud Master DB -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-2xl p-5 relative overflow-hidden glow-purple">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-semibold">LAYER 3: CLOUD MASTER</span>
+                        <i class="fa-solid fa-cloud text-purple-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Google Sheets & GAS API</h3>
+                    <p class="text-xs text-[#8b949e] leading-relaxed mb-4">
+                        Master Database 15 ตาราง บันทึกผลัดทหาร ประวัติเงิน 2 กระเป๋า ยอด GP จ่า และส่งการเงินกองบิน 21
+                    </p>
+                    <ul class="space-y-2 text-xs font-mono text-[#c9d1d9]">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400 text-[10px]"></i> Google Apps Script (REST Web App)</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400 text-[10px]"></i> 15 Trimmed Sheets Partitioning</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400 text-[10px]"></i> Historical Cost Lock ($0 Cost)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1.1 SPA & Zero-Reload State Architecture (NEW) -->
+        <section class="space-y-4">
+            <div class="border-b border-[#21262d] pb-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-bolt-lightning text-amber-400"></i>
+                            1.1 รูปแบบการทำงาน SPA & การจำข้อมูลข้ามหน้า (Zero-Reload Architecture)
+                        </h2>
+                        <p class="text-xs text-[#8b949e]">ทำไมเวลาเปลี่ยนหน้าจอ (เช่น สลับจาก POS ไปดูรายงาน แล้วกลับมา) ข้อมูลถึงไม่ต้องโหลดใหม่ และของในตะกร้าไม่หาย?</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs font-bold">
+                        Single Page Application (SPA)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Comparison Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Bad: Traditional MPA -->
+                <div class="bg-[#161b26] border border-rose-500/30 rounded-2xl p-5 space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between text-rose-400">
+                        <span class="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/30">แบบเดิม (Multi-Page App / MPA)</span>
+                        <i class="fa-solid fa-circle-xmark text-lg"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">โหลดใหม่ทั้งหน้าทุกครั้งที่กดเปลี่ยนลิงก์</h3>
+                    <ul class="text-xs space-y-2 text-[#8b949e]">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-xmark text-rose-400 mt-0.5"></i>
+                            <span><strong>หน้าจอดำ/กะพริบ (Page Refresh)</strong>: เบราว์เซอร์ต้องยิงขอ HTML+JS ใหม่ทุกหน้า ทำให้ช้า 1-3 วินาที</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-xmark text-rose-400 mt-0.5"></i>
+                            <span><strong>ข้อมูลที่พิมพ์ค้างไว้หาย</strong>: ตะกร้าสินค้าที่ยิงไว้หลุด ต้องเริ่มยิงสินค้าใหม่</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-xmark text-rose-400 mt-0.5"></i>
+                            <span><strong>ดึง Database ซ้ำซ้อน</strong>: เปลืองเน็ตและติด Quota ของ Google Sheets อย่างรวดเร็ว</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Good: Modern SPA Local-First -->
+                <div class="bg-[#161b26] border border-emerald-500/40 rounded-2xl p-5 space-y-3 relative overflow-hidden glow-green">
+                    <div class="flex items-center justify-between text-emerald-400">
+                        <span class="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">ระบบ PX กองบิน 21 (Modern SPA + State Cache)</span>
+                        <i class="fa-solid fa-circle-check text-lg"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">เปลี่ยนหน้าไว 0 วินาที & เก็บข้อมูลในหน่วยความจำถาวร</h3>
+                    <ul class="text-xs space-y-2 text-[#c9d1d9]">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span><strong>Client-Side Routing (React Router)</strong>: โหลดหน้าเว็บครั้งแรกครั้งเดียว การสลับหน้าเป็นการสลับ Component ภายใน RAM (0.001s ไร้การกะพริบ)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span><strong>In-Memory State (Zustand Store)</strong>: ตะกร้าสินค้า, ทหารที่เลือกไว้, กะแคชเชียร์ คงอยู่ตลอดเวลา แม้สลับไปหน้า Admin แล้วกลับมา</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span><strong>Persistent Local Database (Dexie IndexedDB)</strong>: สินค้า 10,000 ชิ้นและคิวออฟไลน์เก็บลงเครื่อง ไม่ต้องดึงเน็ตซ้ำ</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4 Pillars of Zero-Reload Tech -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                <div class="bg-[#111622] p-4 rounded-xl border border-[#262c3b] space-y-1.5">
+                    <div class="text-cyan-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group"></i> 1. Virtual DOM Swap
+                    </div>
+                    <div class="text-xs font-bold text-white">สลับหน้าใน RAM</div>
+                    <p class="text-[11px] text-[#8b949e]">เบราว์เซอร์ไม่ Refresh หน้า สลับ View ด้วย JavaScript ในเสี้ยววินาที</p>
+                </div>
+
+                <div class="bg-[#111622] p-4 rounded-xl border border-[#262c3b] space-y-1.5">
+                    <div class="text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-memory"></i> 2. Reactive Store
+                    </div>
+                    <div class="text-xs font-bold text-white">Zustand State Cache</div>
+                    <p class="text-[11px] text-[#8b949e]">State ตะกร้า, ยอดเงิน, กะแคชเชียร์ ฝังอยู่ใน Store ส่วนกลาง ไม่ถูกลบ</p>
+                </div>
+
+                <div class="bg-[#111622] p-4 rounded-xl border border-[#262c3b] space-y-1.5">
+                    <div class="text-purple-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-database"></i> 3. IndexedDB Cache
+                    </div>
+                    <div class="text-xs font-bold text-white">เก็บ Catalog ถาวร</div>
+                    <p class="text-[11px] text-[#8b949e]">เปิดเครื่องปุ๊บ ค้นหาสินค้าจากเครื่องตัวเองทันที &lt; 5ms ไม่ต้องรอเน็ต</p>
+                </div>
+
+                <div class="bg-[#111622] p-4 rounded-xl border border-[#262c3b] space-y-1.5">
+                    <div class="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-rotate"></i> 4. Smart ETag Sync
+                    </div>
+                    <div class="text-xs font-bold text-white">อัปเดตเฉพาะเมื่อมีแก้</div>
+                    <p class="text-[11px] text-[#8b949e]">ดึงข้อมูลจาก Sheets เฉพาะเมื่อมีการเปลี่ยนราคาสินค้าหรือเพิ่มรายการใหม่</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Detailed Tech Stack Specifications -->
+        <section class="space-y-6">
+            <div class="border-b border-[#21262d] pb-3">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-emerald-400"></i>
+                    2. รายละเอียดเทคโนโลยีแต่ละส่วน (Tech Stack Components)
+                </h2>
+                <p class="text-xs text-[#8b949e]">เปรียบเทียบข้อดี ข้อเสีย และเหตุผลในการเลือกใช้แต่ละเทคโนโลยี</p>
+            </div>
+
+            <div class="overflow-x-auto bg-[#161b26] border border-[#262c3b] rounded-2xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-[#0e121a] text-[#8b949e] font-mono uppercase border-b border-[#262c3b]">
+                        <tr>
+                            <th class="py-3 px-4">Component</th>
+                            <th class="py-3 px-4">Technology</th>
+                            <th class="py-3 px-4">จุดเด่น / ข้อดี (Pros)</th>
+                            <th class="py-3 px-4">ข้อจำกัด / การรับมือ (Mitigation)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#21262d] font-sans">
+                        <!-- 1. Frontend Framework -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-cyan-400">Frontend UI</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">React 19 + TypeScript + Vite</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • HMR รวดเร็ว โหลดคอมไพล์ < 50ms<br>
+                                • Type-Safety ป้องกันบักการเงินและเศษสตางค์<br>
+                                • นิเวศน์ UI หลากหลาย พัฒนาได้เร็วที่สุด
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                ต้องมี build step (แก้โดยใช้ Vite Single-command build)
+                            </td>
+                        </tr>
+
+                        <!-- 2. Styling System -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-cyan-400">Styling</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">Tailwind CSS 3.4</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • ไฟล์ CSS ขนาดจิ๋ว (< 15KB เมื่อ Purge)<br>
+                                • รองรับ Dark Mode และ Responsive ทุกขนาดจอ (มือถือ -> POS จอใหญ่)
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                คลาสยาว (แก้โดยแยก UI Component ย่อย)
+                            </td>
+                        </tr>
+
+                        <!-- 3. Local Storage -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">Local DB</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">Dexie.js (IndexedDB Wrapper)</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • เก็บ Catalog 10,000+ รายการ ค้นหาแบบ Full-text < 5ms<br>
+                                • เก็บ Offline Sync Queue และประวัติบิลในเครื่องถาวร
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                ถ้าผู้ใช้ Clear Browser Cache (แก้โดยเปิด Persistent Storage API)
+                            </td>
+                        </tr>
+
+                        <!-- 4. State Management -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">State Engine</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">Zustand + Immer</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • เบากว่า Redux 90% (ขนาด < 1KB)<br>
+                                • จัดการ Party Mode Split Bill และตะกร้าสินค้าแบบ Reactive ปรมาณู
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                ต้องระวังการเขียน State นอก Reducer (แก้โดยใช้ Typescript strict)
+                            </td>
+                        </tr>
+
+                        <!-- 5. Hardware Peripherals -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-amber-400">Hardware I/O</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">WebHID + ESC/POS Raw Print</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • ยิงบาร์โค้ดผ่าน Keyboard Wedge หรือ USB Direct ได้ทันที<br>
+                                • สั่งพิมพ์สลิปความร้อนและเตะลิ้นชักเก็บเงิน RJ11 ตรงจากเบราว์เซอร์
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                เบราว์เซอร์ต้องรองรับ Chromium (Chrome, Edge)
+                            </td>
+                        </tr>
+
+                        <!-- 6. Backend & DB -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-purple-400">Backend & DB</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">Google Apps Script + Sheets</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • ค่าใช้จ่าย Server = 0 บาทตลอดชีพ<br>
+                                • นายทหารฝ่ายการเงินเปิดดูและพิมพ์รายงานด้วย Google Sheets ได้ทันที
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                มี Quota รายวัน (แก้โดยใช้ Local-First ลดการยิง API ซ้ำซ้อน)
+                            </td>
+                        </tr>
+
+                        <!-- 7. Hosting -->
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-blue-400">Hosting</td>
+                            <td class="py-3.5 px-4 font-semibold text-white">Cloudflare Pages / GitHub Pages</td>
+                            <td class="py-3.5 px-4 text-[#c9d1d9]">
+                                • ฟรี ไม่จำกัด Bandwidth พร้อม SSL อัตโนมัติ<br>
+                                • โหลดหน้าเว็บผ่าน Edge CDN ทั่วโลก < 15ms
+                            </td>
+                            <td class="py-3.5 px-4 text-[#8b949e]">
+                                เป็น Static Hosting (ซึ่งเข้ากับสถาปัตยกรรม PWA + GAS พอดี)
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. Hardware Integration Flow -->
+        <section class="space-y-4">
+            <div class="border-b border-[#21262d] pb-3">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-barcode text-amber-400"></i>
+                    3. การเชื่อมต่ออุปกรณ์ฮาร์ดแวร์หน้าร้าน (POS Peripherals)
+                </h2>
+                <p class="text-xs text-[#8b949e]">เทคนิคการคุยกับเครื่องสแกนบาร์โค้ด เครื่องพิมพ์ใบเสร็จ และลิ้นชักเก็บเงิน</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 1. Barcode Scanner -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-cyan-400 mb-2 font-bold text-sm">
+                        <i class="fa-solid fa-barcode text-lg"></i>
+                        <span>เครื่องยิงบาร์โค้ด (Scanner)</span>
+                    </div>
+                    <p class="text-xs text-[#8b949e] mb-3">รองรับเครื่องสแกน USB / Bluetooth ทุกรุ่นในโหมด Keyboard Wedge (HID)</p>
+                    <div class="bg-[#0e121a] p-3 rounded-lg border border-[#262c3b] font-mono text-[11px] text-[#79c0ff]">
+                        // ดักจับ Keypress ต่อเนื่อง (&lt; 50ms interval)<br>
+                        window.addEventListener('keydown', handleGlobalBarcodeScan);
+                    </div>
+                </div>
+
+                <!-- 2. Thermal Printer -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-emerald-400 mb-2 font-bold text-sm">
+                        <i class="fa-solid fa-print text-lg"></i>
+                        <span>เครื่องพิมพ์สลิป (ESC/POS)</span>
+                    </div>
+                    <p class="text-xs text-[#8b949e] mb-3">พิมพ์ผ่าน Web Bluetooth หรือ Print Dialog แบบ Silent Printing</p>
+                    <div class="bg-[#0e121a] p-3 rounded-lg border border-[#262c3b] font-mono text-[11px] text-[#56d364]">
+                        // คำสั่ง ESC/POS ตัดกระดาษ<br>
+                        const CUT_PAPER = new Uint8Array([0x1D, 0x56, 0x41, 0x00]);
+                    </div>
+                </div>
+
+                <!-- 3. Cash Drawer -->
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-amber-400 mb-2 font-bold text-sm">
+                        <i class="fa-solid fa-cash-register text-lg"></i>
+                        <span>ลิ้นชักเก็บเงิน (Cash Drawer)</span>
+                    </div>
+                    <p class="text-xs text-[#8b949e] mb-3">ต่อสาย RJ11 เข้ากับเครื่องพิมพ์ สั่งเด้งอัตโนมัติเมื่อรับเงินสด</p>
+                    <div class="bg-[#0e121a] p-3 rounded-lg border border-[#262c3b] font-mono text-[11px] text-[#e3b341]">
+                        // คำสั่ง Kick Drawer RJ11<br>
+                        const OPEN_DRAWER = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Security & Data Isolation Matrix -->
+        <section class="space-y-4">
+            <div class="border-b border-[#21262d] pb-3">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-rose-400"></i>
+                    4. ความปลอดภัยและการซ่อนราคาทุน (Security & Cost Shield)
+                </h2>
+                <p class="text-xs text-[#8b949e]">หลักการปกป้องข้อมูลทางการค้าและสิทธิ์การเข้าถึง (RBAC)</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-xl p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                        <i class="fa-solid fa-eye-slash"></i> ซ่อนราคาทุนจากหน้าจอแคชเชียร์ 100%
+                    </h3>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        หน้าจอ POS แคชเชียร์จะดาวน์โหลดเฉพาะตาราง <code class="text-cyan-300">Product_Catalog</code> (ไม่มีคอลัมน์ราคาทุนและ GP) แคชเชียร์จึงไม่มีทางเห็นกำไรหรือต้นทุนของจ่า ส่วนการบันทึก <code class="text-cyan-300">cost_price_at_sale</code> จะถูกจัดการฝั่ง Server บน Google Apps Script เท่านั้น
+                    </p>
+                </div>
+
+                <div class="bg-[#161b26] border border-[#262c3b] rounded-xl p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-lock"></i> Void Authorization Gate
+                    </h3>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        การกดยกเลิกบิลหรือคืนเงิน (Void / Refund) แคชเชียร์ไม่สามารถทำได้โดยพลการ ระบบจะบังคับให้กรอก PIN หรือสแกนบัตรของระดับ <code class="text-emerald-300">ADMIN</code> เพื่ออนุมัติ พร้อมบันทึก <code class="text-emerald-300">authorized_by</code> ลงใน Void_Logs เสมอ
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Offline Simulation Playground (Interactive) -->
+        <section class="bg-[#161b26] border border-[#262c3b] rounded-2xl p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-[#21262d] pb-4">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-vial text-cyan-400"></i>
+                        5. จำลองการทำงานของระบบ (Interactive Architecture Sandbox)
+                    </h3>
+                    <p class="text-xs text-[#8b949e]">ทดลองยิงบิลในโหมด Offline / Online เพื่อดูการเก็บคิวและการกระจายยอด Satang Split</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="network-status" class="px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ONLINE
+                    </span>
+                    <button onclick="toggleNetwork()" class="px-3 py-1 rounded bg-[#21262d] hover:bg-[#30363d] text-xs font-mono text-white transition-colors">
+                        สลับสถานะเน็ต (Toggle Offline)
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Quick Scan Simulator -->
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-[#8b949e] uppercase font-mono">1. ยิงสินค้าเข้าตะกร้า</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="addItem('8850123401', 'นมถั่วเหลือง UHT', 20.00)" class="p-3 bg-[#111622] hover:bg-[#1a2130] border border-[#262c3b] rounded-xl text-left transition-colors">
+                            <div class="text-xs font-bold text-white">นมถั่วเหลือง</div>
+                            <div class="text-[11px] text-cyan-400 font-mono mt-1">฿20.00</div>
+                        </button>
+                        <button onclick="addItem('8850123499', 'นมถั่วเหลือง (แพ็ค 6)', 115.00)" class="p-3 bg-[#111622] hover:bg-[#1a2130] border border-[#262c3b] rounded-xl text-left transition-colors">
+                            <div class="text-xs font-bold text-white">แพ็ค 6 (Multi-UOM)</div>
+                            <div class="text-[11px] text-cyan-400 font-mono mt-1">฿115.00</div>
+                        </button>
+                        <button onclick="addItem('8850123405', 'ขนมปังเนยสด', 15.00)" class="p-3 bg-[#111622] hover:bg-[#1a2130] border border-[#262c3b] rounded-xl text-left transition-colors">
+                            <div class="text-xs font-bold text-white">ขนมปังเนยสด</div>
+                            <div class="text-[11px] text-cyan-400 font-mono mt-1">฿15.00</div>
+                        </button>
+                        <button onclick="addItem('SRV-HAIRCUT', 'บริการตัดผม', 50.00)" class="p-3 bg-[#111622] hover:bg-[#1a2130] border border-[#262c3b] rounded-xl text-left transition-colors">
+                            <div class="text-xs font-bold text-white">ตัดผม (Service)</div>
+                            <div class="text-[11px] text-cyan-400 font-mono mt-1">฿50.00</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cart & Party Mode Split -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-[#8b949e] uppercase font-mono">2. ตะกร้า & Party Mode</label>
+                        <span id="cart-total" class="text-sm font-bold text-emerald-400 font-mono">฿0.00</span>
+                    </div>
+                    <div id="cart-items" class="bg-[#0e121a] p-3 rounded-xl border border-[#262c3b] min-h-[140px] max-h-[160px] overflow-y-auto text-xs space-y-1 text-[#8b949e]">
+                        (ยังไม่มีสินค้าในตะกร้า)
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="setPartyMode(1)" id="split-btn-1" class="flex-1 py-1 rounded bg-cyan-600 text-white text-xs font-mono font-bold">1 คน (เดี่ยว)</button>
+                        <button onclick="setPartyMode(3)" id="split-btn-3" class="flex-1 py-1 rounded bg-[#21262d] text-[#8b949e] text-xs font-mono">3 คน (หารบิล)</button>
+                    </div>
+                </div>
+
+                <!-- Checkout & Queue Action -->
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-[#8b949e] uppercase font-mono">3. บันทึกบิล & คิวออฟไลน์</label>
+                    <button onclick="processCheckout()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> ชำระเงิน / ยิงบิล (Checkout)
+                    </button>
+                    <div class="bg-[#0e121a] p-3 rounded-xl border border-[#262c3b] space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-[#8b949e]">Offline Sync Queue:</span>
+                            <span id="queue-count" class="font-bold text-amber-400">0 รายการ</span>
+                        </div>
+                        <div id="queue-logs" class="text-[11px] font-mono text-[#79c0ff] space-y-0.5 max-h-[70px] overflow-y-auto">
+                            • พร้อมทำงานในโหมด Zero-Lag
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#21262d] bg-[#0e121a] py-6 px-6 text-center text-xs text-[#8b949e]">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>PX New Recruits System Architecture • Wing 21 Ubon Ratchathani</p>
+            <p class="font-mono text-cyan-400">React 19 • TypeScript • IndexedDB • GAS 15-Tables DB</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Simulator Script -->
+    <script>
+        let isOnline = true;
+        let cart = [];
+        let partyCount = 1;
+        let offlineQueue = [];
+
+        function toggleNetwork() {
+            isOnline = !isOnline;
+            const statusEl = document.getElementById('network-status');
+            if (isOnline) {
+                statusEl.className = "px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5";
+                statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ONLINE';
+                syncQueue();
+            } else {
+                statusEl.className = "px-2.5 py-1 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold flex items-center gap-1.5";
+                statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> OFFLINE';
+            }
+        }
+
+        function addItem(barcode, name, price) {
+            const existing = cart.find(i => i.barcode === barcode);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ barcode, name, price, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+            if (cart.length === 0) {
+                container.innerHTML = '(ยังไม่มีสินค้าในตะกร้า)';
+                totalEl.textContent = '฿0.00';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = cart.map(i => {
+                const sub = i.qty * i.price;
+                total += sub;
+                return `<div class="flex justify-between items-center py-1 border-b border-[#21262d]">
+                    <span class="text-white">${i.name} x${i.qty}</span>
+                    <span class="font-mono text-cyan-400 font-bold">฿${sub.toFixed(2)}</span>
+                </div>`;
+            }).join('');
+
+            if (partyCount > 1) {
+                const splitAmt = Math.floor((total / partyCount) * 100) / 100;
+                const satangRemainder = Number((total - (splitAmt * partyCount)).toFixed(2));
+                container.innerHTML += `
+                    <div class="mt-2 pt-2 border-t border-cyan-500/30 text-cyan-300 font-mono text-[11px]">
+                        Party Split 3 คน: คนละ ฿${splitAmt.toFixed(2)} (Host รับเศษสตางค์ +฿${satangRemainder.toFixed(2)})
+                    </div>
+                `;
+            }
+
+            totalEl.textContent = '฿' + total.toFixed(2);
+        }
+
+        function setPartyMode(count) {
+            partyCount = count;
+            document.getElementById('split-btn-1').className = count === 1 ? 'flex-1 py-1 rounded bg-cyan-600 text-white text-xs font-mono font-bold' : 'flex-1 py-1 rounded bg-[#21262d] text-[#8b949e] text-xs font-mono';
+            document.getElementById('split-btn-3').className = count === 3 ? 'flex-1 py-1 rounded bg-cyan-600 text-white text-xs font-mono font-bold' : 'flex-1 py-1 rounded bg-[#21262d] text-[#8b949e] text-xs font-mono';
+            renderCart();
+        }
+
+        function processCheckout() {
+            if (cart.length === 0) {
+                alert('กรุณาเลือกสินค้าเข้าตะกร้าก่อน');
+                return;
+            }
+
+            const total = cart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+            const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+            const logEl = document.getElementById('queue-logs');
+
+            if (!isOnline) {
+                offlineQueue.push({ orderId, total, items: [...cart], time: new Date().toLocaleTimeString() });
+                document.getElementById('queue-count').textContent = offlineQueue.length + ' รายการ';
+                logEl.innerHTML = `<div class="text-amber-400">⚡ [OFFLINE] บันทึกลง IndexedDB: ${orderId} (฿${total.toFixed(2)})</div>` + logEl.innerHTML;
+            } else {
+                logEl.innerHTML = `<div class="text-emerald-400">✓ [ONLINE] ซิงค์ตรงเข้า Google Sheets: ${orderId} (฿${total.toFixed(2)})</div>` + logEl.innerHTML;
+            }
+
+            cart = [];
+            renderCart();
+        }
+
+        function syncQueue() {
+            if (offlineQueue.length === 0) return;
+            const logEl = document.getElementById('queue-logs');
+            logEl.innerHTML = `<div class="text-cyan-400">🔄 ทำการซิงค์ ${offlineQueue.length} รายการจาก IndexedDB ไปยัง Google Sheets สำเร็จ!</div>` + logEl.innerHTML;
+            offlineQueue = [];
+            document.getElementById('queue-count').textContent = '0 รายการ';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeerFlow Squad Workbench — คู่มือติดตั้งและใช้งาน</title>
+<style>
+  :root { --bg:#06090f; --panel:#0d1322; --cyan:#00f0ff; --yellow:#ffea00; --green:#00ff88; --pink:#ff007f; --purple:#b026ff; --dim:#7f8fa4; --line:rgba(255,255,255,.09); }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:#e8eef7; font-family:-apple-system,'Segoe UI',Tahoma,sans-serif; line-height:1.75; margin:0; padding:0 0 80px; }
+  .wrap { max-width:900px; margin:0 auto; padding:24px 20px; }
+  header.top { border-bottom:1px solid var(--line); padding:28px 0 18px; }
+  header.top h1 { font-size:26px; margin:0 0 6px; }
+  header.top h1 .deer { color:var(--cyan); }
+  .sub { color:var(--dim); }
+  nav.toc { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 20px; margin:20px 0; }
+  nav.toc a { color:var(--cyan); text-decoration:none; }
+  nav.toc li { margin:3px 0; }
+  h2 { color:var(--cyan); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:38px; font-size:20px; }
+  h3 { color:var(--yellow); margin-top:24px; font-size:16px; }
+  code, kbd { font-family:'Fira Code',Menlo,Consolas,monospace; background:#111a2e; border:1px solid var(--line); border-radius:5px; padding:1px 7px; font-size:13px; color:#ffd9ec; }
+  pre { background:#0a0f1e; border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13px; line-height:1.65; }
+  pre code { background:none; border:none; padding:0; color:#c9f6ff; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--cyan); }
+  .warn { border:1px solid var(--pink); background:rgba(255,0,127,.07); border-radius:10px; padding:12px 16px; margin:14px 0; }
+  .tip { border:1px solid var(--green); background:rgba(0,255,136,.06); border-radius:10px; padding:12px 16px; margin:14px 0; }
+  .file { color:var(--purple); font-family:monospace; }
+  footer { color:var(--dim); font-size:12px; margin-top:40px; border-top:1px solid var(--line); padding-top:12px; }
+  .badge { display:inline-block; font-size:11px; border:1px solid var(--cyan); color:var(--cyan); border-radius:20px; padding:0 10px; margin-right:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>🦌 <span class="deer">DeerFlow Squad Workbench</span></h1>
+  <div class="sub">คู่มือติดตั้ง + ใช้งานฉบับสมบูรณ์ — Web IDE + ห้อง terminal AI 5 ห้องที่คุยกันเองได้ (ภาษาไทย)</div>
+  <div style="margin-top:8px;"><span class="badge">Node 22+</span><span class="badge">macOS / Linux</span><span class="badge">localhost เท่านั้น</span></div>
+</header>
+
+<nav class="toc"><b>สารบัญ</b>
+<ol>
+  <li><a href="#what">ระบบนี้คืออะไร</a></li>
+  <li><a href="#files">ไฟล์อะไรอยู่ตรงไหน</a></li>
+  <li><a href="#req">สิ่งที่ต้องมีก่อนติดตั้ง</a></li>
+  <li><a href="#install">ติดตั้งทีละขั้น (ครั้งแรก)</a></li>
+  <li><a href="#start">เปิดใช้งานประจำวัน</a></li>
+  <li><a href="#web">ใช้หน้าเว็บ Workbench</a></li>
+  <li><a href="#talk">สั่งให้ AI คุยกัน</a></li>
+  <li><a href="#squadcli">คำสั่ง squad.mjs ทั้งหมด</a></li>
+  <li><a href="#code">ร่วมกันเขียนโค้ดไม่เหยียบไฟล์กัน</a></li>
+  <li><a href="#teach">สอน AI ประจำห้อง (ครั้งแรกครั้งเดียว)</a></li>
+  <li><a href="#monitor">หน้าจอมอนิเตอร์</a></li>
+  <li><a href="#trouble">แก้ปัญหาเบื้องต้น</a></li>
+  <li><a href="#security">ข้อควรระวังความปลอดภัย</a></li>
+  <li><a href="#faq">คำถามที่เจอบ่อย</a></li>
+</ol>
+</nav>
+
+<h2 id="what">1. ระบบนี้คืออะไร</h2>
+<p>เว็บ IDE + ทีม AI 5 ห้อง (terminal จริง) ในหน้าเดียว ประกอบด้วย 2 โปรแกรมที่แยกกันรัน:</p>
+<table>
+<tr><th>โปรแกรม</th><th>ไฟล์</th><th>หน้าที่</th></tr>
+<tr><td><b>Web server</b></td><td><span class="file">hud-web.mjs</span></td><td>เสิร์ฟหน้าเว็บ, editor แก้ไฟล์, เป็นตัวกลาง API — <b>รีสตาร์ทได้โดยแชตไม่หาย</b></td></tr>
+<tr><td><b>PTY daemon</b></td><td><span class="file">pty-daemon.mjs</span></td><td>อุ้ม terminal ทั้ง 5 ห้อง + ฐานข้อมูล SQLite — <b>ห้ามฆ่าตอนใช้งาน</b> แชตหายหมด</td></tr>
+</table>
+<p>ห้องทั้ง 5: <code>0: SUPERAGENT</code> (สั่งงาน) <code>1: DEEP RESEARCH</code> (ค้น) <code>2: SANDBOX CODER</code> (เขียนโค้ด) <code>3: ARTIFACT CREATOR</code> (docs+test) <code>4: MEMORY VERIFIER</code> (ตรวจ)</p>
+
+<h2 id="files">2. ไฟล์อะไรอยู่ตรงไหน</h2>
+<table>
+<tr><th>ไฟล์</th><th>คืออะไร</th></tr>
+<tr><td><span class="file">hud-web.mjs</span></td><td>web server (พอร์ต 5999)</td></tr>
+<tr><td><span class="file">pty-daemon.mjs</span></td><td>daemon อุ้ม terminal (รันเองอัตโนมัติ)</td></tr>
+<tr><td><span class="file">squad.mjs</span></td><td>คำสั่งให้คน/AI ใช้คุยกันจาก terminal</td></tr>
+<tr><td><span class="file">server.sh</span></td><td>สคริปต์ start/stop/restart/status</td></tr>
+<tr><td><span class="file">SQUAD.md</span></td><td>คู่มือตัวตนของ AI (5 บทบาท)</td></tr>
+<tr><td><span class="file">SQUAD-TALK.md</span></td><td>บทเรียนวิธีคุยกัน + แก้ปัญหา</td></tr>
+<tr><td><span class="file">SQUAD-BRIEF.md</span></td><td>บทบรีฟก็อปวางสอน AI ที่ยังไม่รู้ระบบ</td></tr>
+<tr><td><span class="file">GOAL.md</span></td><td>เป้าหมายทีม (สร้างตอน SET GOAL)</td></tr>
+<tr><td><span class="file">manual.html</span></td><td>ไฟล์คู่มือนี้ (เปิดที่ <code>/manual</code>)</td></tr>
+</table>
+<p>ข้อมูลรันไทม์ (ไม่ต้องแตะ): SQLite <code>~/.gemini/antigravity-cli/squad.db</code>, log terminal <code>~/.gemini/antigravity-cli/pty-logs/</code>, socket <code>/tmp/deerflow-pty.sock</code></p>
+
+<h2 id="req">3. สิ่งที่ต้องมีก่อนติดตั้ง</h2>
+<ul>
+<li><b>Node.js 22 ขึ้นไป</b> — เช็คด้วย <code>node -v</code> (โปรเจกต์นี้ใช้ v24)</li>
+<li><b>macOS หรือ Linux</b> (Windows ใช้ผ่าน WSL)</li>
+<li>พอร์ต <b>5999</b> ว่าง</li>
+<li>อินเทอร์เน็ตรอบแรก (โหลด editor/xterm จาก CDN + <code>npm install</code>)</li>
+</ul>
+
+<h2 id="install">4. ติดตั้งทีละขั้น (ครั้งแรก)</h2>
+<pre><code># 1) เข้าโฟลเดอร์โปรเจกต์
+cd "/path/to/project"
+
+# 2) ลง dependency (ครั้งเดียว)
+npm install ws node-pty
+
+# 3) macOS: ถ้า node-pty spawn ไม่ผ่าน ให้ permission helper
+chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null; true
+
+# 4) ให้สิทธิ์รันสคริปต์
+chmod +x server.sh squad.mjs hud-web.mjs pty-daemon.mjs
+
+# 5) สตาร์ท
+./server.sh start
+# เปิด http://localhost:5999 แล้วกด LAUNCH ALL 5</code></pre>
+<div class="tip">ย้ายโฟลเดอร์ไปเครื่องอื่นได้เลย — ทุก path ในโค้ดอ้างอิงตำแหน่งตัวเอง/โฟลเดอร์ปัจจุบัน ไม่มี path ตายตัว ยกเว้นไฟล์ข้อมูลใน <code>~/.gemini/antigravity-cli/</code> ที่จะถูกสร้างให้ใหม่อัตโนมัติ</div>
+
+<h2 id="start">5. เปิดใช้งานประจำวัน</h2>
+<pre><code>./server.sh start     # เปิดเว็บ (daemon ติดเอง)
+./server.sh restart   # อัปเดตโค้ดแล้วรีเฉพาะเว็บ — แชตไม่หาย ไม่ต้องเปิด agy ใหม่
+./server.sh stop      # หยุดแค่เว็บ (แชตยังค้างใน daemon)
+./server.sh status    # ดูว่า web/daemon/ห้องไหน live อยู่
+./server.sh stop-all  # ล้างกระดาน (แชตหาย!) ใช้เฉพาะตอนอยากเริ่มใหม่หมด</code></pre>
+<div class="warn"><b>ห้าม</b> <code>pkill -f pty-daemon</code> ตอนใช้งาน — นั่นคือปุ่มทำลายแชตทุกห้อง</div>
+
+<h2 id="web">6. ใช้หน้าเว็บ Workbench</h2>
+<ul>
+<li><b>ซ้าย:</b> Explorer + Monaco editor (กด <code>Ctrl/⌘+S</code> เซฟ) + Process Runner — ปุ่ม <code>EXPLORER</code>/<code>CODE</code> บน header ซ่อนแผงได้</li>
+<li><b>ขวา:</b> 5 tab ห้อง terminal (คลิกสลับ, ปุ่ม <code>GRID</code> ดูพร้อมกัน) — จุด <span style="color:#00ff88">●</span> เขียว = เชื่อมอยู่, แดง = กำลังต่อกลับเอง</li>
+<li>ปุ่มประจำห้อง: <code>START AGY</code> / <code>CTRL+C</code> / <code>CLEAR</code> / <code>↻ RESTART</code> (ฆ่าห้องนั้นเกิดใหม่เมื่อค้าง)</li>
+<li>แถบบน: สถานะ CLI (model, memory, quota) + แถบ <code>GOAL</code> + แผง HUD/INTER-CHAT/squad</li>
+</ul>
+
+<h2 id="talk">7. สั่งให้ AI คุยกัน</h2>
+<p>แถบ <code>INTER-CHAT</code> → เลือกห้องปลายทาง → พิมพ์ → กด:</p>
+<table>
+<tr><th>ปุ่ม</th><th>ผล</th></tr>
+<tr><td><code>TASK</code></td><td>ส่งงานแบบติดตามได้ (มีเลข id, ลง inbox, เด้งเข้าจอพร้อมกระดิ่ง)</td></tr>
+<tr><td><code>TELL</code></td><td>พิมพ์ดิบเข้าห้องนั้นทันที (เหมือนนั่งพิมพ์เอง)</td></tr>
+<tr><td><code>INBOX (n)</code></td><td>เปิดลิ้นชักงานค้างของห้องที่เปิดอยู่ พิมพ์ผลแล้ว <code>ACK+DONE</code> (ผลส่งกลับคนสั่งเอง)</td></tr>
+<tr><td><code>GOAL → SET</code></td><td>ประกาศเป้าหมายทั้งทีม + เซฟ <code>GOAL.md</code></td></tr>
+<tr><td><code>SEND</code> (บน header)</td><td>ตะโกนพร้อมกัน 5 ห้อง</td></tr>
+</table>
+<p><b>บทสนทนาแรกสุด (3 กด):</b> เลือก <code>2: SANDBOX CODER</code> → พิมพ์ <code>ทักทายห้อง 0 หน่อย</code> → <code>TASK</code> → ไป tab 2 ดูกรอบงาน → <code>INBOX</code> → พิมพ์ตอบ → <code>ACK+DONE</code> → กลับ tab 0 ดูคำตอบ</p>
+
+<h2 id="squadcli">8. คำสั่ง squad.mjs ทั้งหมด</h2>
+<p>รันใน terminal ห้องไหนก็ได้ (AI ใช้เองได้):</p>
+<pre><code>node squad.mjs who                  ดูทีม: ใคร live/ดูจออยู่/เงียบไปนานแค่ไหน
+node squad.mjs inbox [ห้อง]          ดูงานค้าง (ค่าเริ่มต้น = ห้องตัวเอง)
+node squad.mjs ack &lt;id&gt; &lt;ผล&gt;      ปิดงาน + ส่งผลกลับคนสั่งอัตโนมัติ
+node squad.mjs task &lt;ห้อง&gt; &lt;งาน&gt;   สั่งงานแบบมีโครง
+node squad.mjs send &lt;ห้อง&gt; &lt;msg&gt;   ทักตรง realtime (มีกระดิ่ง)
+node squad.mjs listen [ห้อง]        เปิดฟัง realtime ทิ้งไว้ (เห็นทุกข้อความทันที)
+node squad.mjs tell &lt;ห้อง&gt; &lt;msg&gt;   พิมพ์ดิบเข้าห้องนั้น
+node squad.mjs broadcast &lt;msg&gt;     พิมพ์ดิบเข้าทั้ง 5 ห้อง
+node squad.mjs goal [ข้อความ]       ดู/ตั้งเป้าหมายทีม
+node squad.mjs claim &lt;ไฟล์&gt; [--shared] [โน้ต]   จองไฟล์ก่อนแก้
+node squad.mjs release &lt;ไฟล์&gt;        ปล่อยไฟล์หลังเสร็จ
+node squad.mjs claims               ดูว่าใครจองไฟล์ไหน + ไฟล์ไหนเปลี่ยนแล้ว
+node squad.mjs knock &lt;ไฟล์&gt; [msg]    เคาะขอร่วมแก้ไฟล์ที่เพื่อนจอง
+node squad.mjs skills               ดูสกิลที่มี
+node squad.mjs restart [ห้อง]       ฆ่าห้องนั้นเกิดใหม่ (ห้องค้าง/vim)
+node squad.mjs lesson               บอก path ไฟล์บทเรียน</code></pre>
+
+<h2 id="code">9. ร่วมกันเขียนโค้ดไม่เหยียบไฟล์กัน</h2>
+<pre><code># ก่อนแตะไฟล์ไหน จองก่อน (คนอื่นมาจะโดนปฏิเสธพร้อมชื่อคนจอง)
+node squad.mjs claim src/app.ts "เพิ่มปุ่ม save"
+
+# อยากช่วยไฟล์ที่เพื่อนจอง: เคาะก่อน อย่าพุ่งเข้าไปแก้
+node squad.mjs knock src/app.ts "ขอช่วยส่วน validation"
+# เจ้าของเปิดโหมดร่วม: node squad.mjs claim src/app.ts --shared "..."
+
+# แก้เสร็จ: ส่งตรวจ + ปล่อย
+node squad.mjs task ai-qa "ตรวจไฟล์ src/app.ts ที่แก้ไป"
+node squad.mjs release src/app.ts</code></pre>
+<p>ไฟล์ที่ถูกแก้ขณะมีคนจอง ระบบสะกิดเจ้าของเอง (<code>[WATCH]</code>) — ดูภาพรวมที่ <code>/monitor</code> แผง EDITING NOW</p>
+
+<h2 id="teach">10. สอน AI ประจำห้อง (ครั้งแรกครั้งเดียว)</h2>
+<p>เปิดทีละ tab พิมพ์ <code>agy</code> (หรือ AI CLI ที่มี) แล้ววาง:</p>
+<pre><code>อ่าน SQUAD.md กับ SQUAD-TALK.md แล้วจำบทตาม $AGENT_ID จากนั้นรัน node squad.mjs who แล้วรายงานว่าตัวเองคือห้องอะไร</code></pre>
+<p>ถ้าห้องไหนพูดเรื่อง subagent ของตัวเอง (ไม่รู้จักระบบเรา) เปิด <code>SQUAD-BRIEF.md</code> ก็อปบล็อกไปวางในห้องนั้นได้เลย</p>
+
+<h2 id="monitor">11. หน้าจอมอนิเตอร์</h2>
+<p><code>http://localhost:5999/monitor</code> (ปุ่ม <code>MONITOR</code> บน header) — การ์ดสถิติ SQLite, ตารางทีมสด, ฟีดข้อความย้อนหลัง (กรองตามห้อง/ชนิดได้), กล่อง GOAL, แผงไฟล์ที่จองอยู่ รีเฟรชทุก 2 วิ</p>
+
+<h2 id="trouble">12. แก้ปัญหาเบื้องต้น</h2>
+<table>
+<tr><th>อาการ</th><th>แก้</th></tr>
+<tr><td>กด LAUNCH แล้ว 500 / start-all error</td><td><code>./server.sh restart</code> (socket ค้างจะถูกล้าง+ปลุก daemon ใหม่เอง) ดู log ที่ <code>~/.gemini/antigravity-cli/pty-daemon.log</code></td></tr>
+<tr><td>ห้องจอดำ / หลุด sync</td><td>รอ 1.5 วิให้ต่อกลับเอง (จุดแดง→เขียว) ไม่หายกด <code>↻ RESTART</code> ห้องนั้น</td></tr>
+<tr><td>เผลอเปิด vim / ห้องค้างในแอปเต็มจอ</td><td><code>↻ RESTART</code> หรือ <code>node squad.mjs restart &lt;ห้อง&gt;</code> (vim ถูกแบนที่ระบบอยู่แล้ว เปิดไม่ได้)</td></tr>
+<tr><td>รีเว็บแล้วแชตหาย</td><td>ใช้ <code>./server.sh restart</code> เท่านั้น อย่า pkill daemon เอง</td></tr>
+<tr><td>daemon รันซ้ำหลายตัว</td><td><code>./server.sh stop-all</code> แล้ว <code>start</code> ใหม่ (มีตัวกันซ้ำในตัว)</td></tr>
+<tr><td>node-pty spawn ไม่ผ่าน (Mac)</td><td><code>chmod +x node_modules/node-pty/prebuilds/*/spawn-helper</code></td></tr>
+<tr><td>พอร์ตชน</td><td><code>HUD_PORT=5998 ./server.sh start</code> (แล้ว <code>squad.mjs</code> ต้องตั้ง <code>HUD_PORT</code> เดียวกัน)</td></tr>
+</table>
+
+<h2 id="security">13. ข้อควรระวังความปลอดภัย</h2>
+<div class="warn"><ul>
+<li>Server ฟังแค่ <b>localhost (127.0.0.1)</b> — เปิดจากเครื่องอื่นไม่ได้ตามค่าเริ่มต้น อย่าแก้ส่วนนี้ถ้าไม่เข้าใจผล</li>
+<li><b>ไม่มีระบบล็อกอิน</b> — ใครเปิดหน้าเว็บได้ = พิมพ์คำสั่งใน terminal ทุกห้องได้ = รันคำสั่งบนเครื่องได้ แชร์โปรเจกต์ได้ แต่ห้ามเปิดพอร์ตออกเน็ตเวิร์ก</li>
+<li>PTY คือ shell จริงของ user ที่รัน — AI ที่รันคำสั่งได้ = สิทธิ์เท่า user นั้น อย่ารันด้วย root</li>
+<li>vim ถูกปิดทั้งระบบ (shim + <code>EDITOR=true</code>) ถ้าต้องการใช้คืน ลบโฟลเดอร์ <code>~/.gemini/antigravity-cli/novin/</code> แล้วรี daemon</li>
+</ul></div>
+
+<h2 id="faq">14. คำถามที่เจอบ่อย</h2>
+<p><b>Q: ห้องไม่รู้จักรระบบ พูดเรื่อง subagent ของตัวเอง?</b><br>A: เอาบล็อกจาก <code>SQUAD-BRIEF.md</code> ไปวางในห้องนั้น</p>
+<p><b>Q: ส่งข้อความแล้วอีกห้องไม่เห็น?</b><br>A: อีกห้องต้องเปิด <code>node squad.mjs listen</code> ค้างไว้ หรือดู <code>INBOX</code> — ข้อความไม่หายเพราะอยู่ใน SQLite อยู่แล้ว เช็คที่ <code>/monitor</code></p>
+<p><b>Q: 2 ห้องพิมพ์หาลีดเดอร์พร้อมกันพังไหม?</b><br>A: ไม่พัง คิวตามลำดับ id ไม่ปนกัน ลีดเดอร์ไล่ <code>ack</code> ทีละงาน</p>
+<p><b>Q: AGENT ช่วยกันแก้ไฟล์เดียวได้ไหม?</b><br>A: ได้ — เจ้าของเปิด <code>claim --shared</code> แล้วอีกคน <code>claim</code> ตาม ไฟล์เปลี่ยนจะมี <code>[WATCH]</code> เตือนทั้งคู่</p>
+
+<footer>DeerFlow Squad Workbench — ไฟล์นี้อยู่ที่ <code>manual.html</code> เปิดผ่านเว็บที่ <code>/manual</code> ได้ตลอด</footer>
+
+</div>
+</body>
+</html>

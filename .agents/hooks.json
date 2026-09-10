@@ -1,0 +1,17 @@
+{
+  "memory-sync": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ./.agents/scripts/auto_memory_sync.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

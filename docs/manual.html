@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือ DeerFlow 2.0 // Antigravity SuperAgent Harness Cockpit (TMUX: agy-team)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Orbitron:wght@600;800;900&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #07090e;
+    --bg-surface: #0d121c;
+    --bg-card: rgba(18, 25, 40, 0.7);
+    --border-glow: rgba(0, 240, 255, 0.3);
+    --border-dim: rgba(255, 255, 255, 0.08);
+    --neon-cyan: #00f0ff;
+    --neon-purple: #b026ff;
+    --neon-green: #00ff88;
+    --neon-yellow: #ffea00;
+    --neon-pink: #ff007f;
+    --text-main: #f0f6fc;
+    --text-dim: #8b9bb4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg-base);
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(176, 38, 255, 0.05) 0%, transparent 40%),
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+    color: var(--text-main);
+    font-family: 'Prompt', sans-serif;
+    line-height: 1.6;
+    padding-bottom: 80px;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px 20px;
+  }
+
+  .hero {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glow);
+    border-radius: 16px;
+    padding: 36px 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 6px; height: 100%;
+    background: linear-gradient(180deg, var(--neon-cyan), var(--neon-green));
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+    letter-spacing: 1.5px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #fff, var(--neon-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  .hero p {
+    color: var(--text-dim);
+    font-size: 14.5px;
+    max-width: 800px;
+  }
+
+  .section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(12px);
+  }
+
+  h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-dim);
+    padding-bottom: 8px;
+  }
+
+  h3 {
+    font-size: 15px;
+    color: #fff;
+    margin: 16px 0 8px;
+    font-weight: 600;
+  }
+
+  p { margin-bottom: 10px; color: #d0d7de; font-size: 14px; }
+
+  .code-block {
+    background: #020408;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0 16px;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    color: #00f0ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .copy-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Prompt', sans-serif;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    border-color: var(--neon-cyan);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 14px 0;
+  }
+  @media (max-width: 700px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  .feat-box {
+    background: rgba(10, 14, 24, 0.6);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .feat-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--neon-cyan);
+    margin-bottom: 4px;
+  }
+  .feat-desc { font-size: 12.5px; color: var(--text-dim); }
+
+  ul { padding-left: 20px; margin-bottom: 12px; color: var(--text-dim); font-size: 13.5px; }
+  li { margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="hero">
+    <div class="badge">🦌 DEERFLOW 2.0 // SUPERAGENT HARNESS</div>
+    <h1>DEERFLOW & ANTIGRAVITY WAR ROOM</h1>
+    <p>ระบบ SuperAgent Harness สำหรับ Long-Horizon Tasks: Deep Research, Sandbox Code, Artifact Deliverables & Memory Verification (TMUX: agy-team)</p>
+  </div>
+
+  <div class="section-card">
+    <h2>🌟 1. สถาปัตยกรรม 5-Harness SuperAgent</h2>
+    <div class="grid-2">
+      <div class="feat-box">
+        <div class="feat-title">🦌 0: DEERFLOW SUPERAGENT</div>
+        <div class="feat-desc">Lead Orchestrator รับโจทย์ใหญ่ แยกย่อยเป้าหมาย (Goal Decomposition) และสั่งการ sub-agent harnesses</div>
+      </div>
+      <div class="feat-box">
+        <div class="feat-title">🌐 1: DEEP RESEARCH HARNESS</div>
+        <div class="feat-desc">ค้นหาข้อมูลเชิงลึก Multi-hop Search, วิเคราะห์ Repository และสังเคราะห์ความรู้</div>
+      </div>
+      <div class="feat-box">
+        <div class="feat-title">⚡ 2: SANDBOX CODER HARNESS</div>
+        <div class="feat-desc">เขียนโค้ดและรันคำสั่งในสภาพแวดล้อม Sandbox แบบ Test-Driven Development (TDD)</div>
+      </div>
+      <div class="feat-box">
+        <div class="feat-title">🎨 3: ARTIFACT CREATOR</div>
+        <div class="feat-desc">สร้าง Deliverables, เอกสารคู่มือ, แผนภาพสถาปัตยกรรม และชุดทดสอบระบบ</div>
+      </div>
+      <div class="feat-box">
+        <div class="feat-title">🛡️ 4: MEMORY & VERIFIER</div>
+        <div class="feat-desc">บันทึก Long-term Memory Checkpoint และตรวจสอบความถูกต้องของระบบ</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <h2>🎮 2. วิธีใช้งาน</h2>
+    <h3>เปิดใช้งานผ่าน Web Cockpit:</h3>
+    <div class="code-block">
+      <span>http://localhost:5999</span>
+      <button class="copy-btn" onclick="copyText('http://localhost:5999')">Copy URL</button>
+    </div>
+
+    <h3>ดึงขึ้นมาดูบน Terminal จริง (TMUX):</h3>
+    <div class="code-block">
+      <span>tmux attach -t agy-team</span>
+      <button class="copy-btn" onclick="copyText('tmux attach -t agy-team')">Copy Command</button>
+    </div>
+    <p>💡 <em>ใน Terminal: กด <code>Ctrl + B</code> ตามด้วยตัวเลข <code>0, 1, 2, 3, 4</code> เพื่อสลับหน้าต่าง Harness</em></p>
+  </div>
+</div>
+
+<script>
+function copyText(txt) {
+  navigator.clipboard.writeText(txt.trim());
+  alert('✓ ก็อปปี้เรียบร้อยแล้ว: ' + txt);
+}
+</script>
+</body>
+</html>
