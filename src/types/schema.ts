@@ -20,22 +20,35 @@ export type CostAbsorbedBy = 'SELLER' | 'UNIT';
  */
 export interface User {
   user_id: string;                  // PK: USR-01, USR-02
-  username: string;                 // ชื่อผู้ใช้ หรือ อีเมล เช่น cashier01, admin@wing21.af
-  pin_hash: string;                 // รหัสผ่าน Hash หรือ PIN 4 หลัก
+  username: string;                 // ชื่อผู้ใช้ เช่น admin, cashier01
+  password_hash?: string;           // รหัสผ่านหลักสำหรับเข้าระบบ (Password)
+  pin_hash: string;                 // รหัส PIN ปลดล็อคด่วน 4-6 หลัก
   full_name: string;                // ยศ-ชื่อ-สกุล
   role: UserRole;                   // ADMIN | STAFF | SELLER
   seller_id?: string;               // FK Ref: เชื่อมกับ Sellers.seller_id (ถ้า role == 'SELLER')
   avatar_url?: string;              // URL รูปโปรไฟล์ผู้ใช้งาน
+  email?: string;                   // อีเมล (Google Sign-In)
+  google_id?: string;               // Google User ID (OAuth sub)
+  line_user_id?: string;            // LINE User ID (Uxxxxxxxx...)
+  line_notify_token?: string;       // LINE Notify Token / Messaging token
   is_active: boolean;               // สถานะเปิดใช้งาน
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthUser {
   user_id: string;
   username: string;
+  password_hash?: string;
+  pin_hash?: string;
   full_name: string;
-  role: 'ADMIN' | 'STAFF' | 'SELLER';
+  role: UserRole;
   seller_id?: string;
   avatar_url?: string;
+  email?: string;
+  google_id?: string;
+  line_user_id?: string;
+  line_notify_token?: string;
   is_active: boolean;
 }
 

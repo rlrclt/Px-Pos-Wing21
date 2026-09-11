@@ -52,3 +52,8 @@ Frontend mirrors: `api.getPayrollSchedules / savePayrollSchedules / getDeduction
 - `computeScheduleStatus()` derives `SCHEDULED / CUTOFF_REACHED / PROCESSED / PAST` from real dates.
 - `SalaryTopupModal` pre-fills amounts from `soldier.credit_limit` (fallback `batch.default_credit_limit`), never 2000.
 
+### 📘 Usage & Data-Flow Handbook
+คู่มือใช้งาน + ตัวอย่างการไหลข้อมูลแบบเห็นตัวเลขจริง: `@./docs/PAYROLL_DEDUCTIONS_CALENDAR_GUIDE.md`
+(ครอบคลุม Payroll Calendar, Monthly Deductions, Salary Top-up, Batch Guard, สถานะรอบ, troubleshooting)
+
+

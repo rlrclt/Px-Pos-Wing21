@@ -7,11 +7,14 @@ import {
   Eye, 
   EyeOff, 
   LogIn, 
-  AlertCircle 
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import { api } from '../../core/api.ts';
 import { useAuthStore } from '../../store/useAuthStore.ts';
 import type { AuthUser } from '../../types/schema.ts';
+import { triggerGoogleSignIn } from '../../services/googleAuthService.ts';
+import { triggerLineLogin } from '../../services/lineAuthService.ts';
 
 interface LoginViewProps {
   onLoginSuccess?: (user: AuthUser) => void;
@@ -22,6 +25,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isLineLoading, setIsLineLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const authLogin = useAuthStore((s) => s.login);
@@ -49,6 +54,59 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       setErrorMsg(e.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setErrorMsg(null);
+    try {
+      const googleProfile = await triggerGoogleSignIn();
+      if (googleProfile && (googleProfile.google_id || googleProfile.email)) {
+        const res = await api.googleLogin({
+          google_id: googleProfile.google_id,
+          email: googleProfile.email
+        });
+
+        if (res.success && res.user) {
+          authLogin(res.user);
+          if (onLoginSuccess) {
+            onLoginSuccess(res.user);
+          }
+        } else {
+          setErrorMsg(res.error || 'ยังไม่พบบัญชีที่ผูกกับ Google นี้ กรุณาเข้าสู่ระบบด้วย Username/PIN ก่อน');
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleLineLogin = async () => {
+    setIsLineLoading(true);
+    setErrorMsg(null);
+    try {
+      const lineProfile = await triggerLineLogin();
+      if (lineProfile && lineProfile.line_user_id) {
+        const res = await api.lineLogin({
+          line_user_id: lineProfile.line_user_id
+        });
+
+        if (res.success && res.user) {
+          authLogin(res.user);
+          if (onLoginSuccess) {
+            onLoginSuccess(res.user);
+          }
+        } else {
+          setErrorMsg(res.error || 'ยังไม่พบบัญชีที่ผูกกับ LINE นี้ กรุณาเข้าสู่ระบบด้วย Username/PIN ก่อน');
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'ไม่สามารถเข้าสู่ระบบด้วย LINE ได้');
+    } finally {
+      setIsLineLoading(false);
     }
   };
 
@@ -105,55 +163,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         className="absolute top-12 right-12 w-[340px] h-[340px] bg-cyan-500/20 rounded-full blur-[110px] pointer-events-none"
       />
 
-      <motion.div
-        animate={{
-          x: [20, -30, 40, 20],
-          y: [-20, 30, -30, -20],
-          scale: [1, 1.15, 0.85, 1],
-        }}
-        transition={{
-          duration: 16,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        className="absolute bottom-12 left-12 w-[360px] h-[360px] bg-emerald-500/15 rounded-full blur-[120px] pointer-events-none"
-      />
-
-      {/* 3. Floating Ambient Particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[
-          { top: '15%', left: '20%', size: 4, duration: 7, delay: 0 },
-          { top: '25%', left: '75%', size: 6, duration: 9, delay: 1 },
-          { top: '65%', left: '15%', size: 5, duration: 8, delay: 2 },
-          { top: '75%', left: '85%', size: 4, duration: 10, delay: 0.5 },
-          { top: '45%', left: '10%', size: 3, duration: 6, delay: 3 },
-          { top: '80%', left: '40%', size: 5, duration: 11, delay: 1.5 },
-          { top: '10%', left: '60%', size: 4, duration: 8.5, delay: 2.5 },
-        ].map((p, idx) => (
-          <motion.div
-            key={idx}
-            animate={{
-              y: [-20, 20, -20],
-              opacity: [0.2, 0.8, 0.2],
-              scale: [1, 1.3, 1],
-            }}
-            transition={{
-              duration: p.duration,
-              repeat: Infinity,
-              delay: p.delay,
-              ease: 'easeInOut',
-            }}
-            style={{
-              top: p.top,
-              left: p.left,
-              width: p.size,
-              height: p.size,
-            }}
-            className="absolute rounded-full shadow-lg bg-blue-400 shadow-blue-400/50"
-          />
-        ))}
-      </div>
-
       {/* Main Login Card */}
       <motion.div 
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -192,6 +201,53 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           )}
         </AnimatePresence>
 
+        {/* 1-Click Social Sign-In Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {/* Google Sign In */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isGoogleLoading || isLoading || isLineLoading}
+            className="py-2.5 px-3 rounded-xl font-bold text-xs bg-white hover:bg-slate-100 text-slate-800 flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-black/20 disabled:opacity-50"
+          >
+            {isGoogleLoading ? (
+              <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+            )}
+            <span>Google Login</span>
+          </button>
+
+          {/* LINE Sign In */}
+          <button
+            type="button"
+            onClick={handleLineLogin}
+            disabled={isLineLoading || isLoading || isGoogleLoading}
+            className="py-2.5 px-3 rounded-xl font-bold text-xs bg-[#06C755] hover:bg-[#05b34c] text-white flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-[#06C755]/20 disabled:opacity-50"
+          >
+            {isLineLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <MessageSquare className="w-4 h-4 fill-current" />
+            )}
+            <span>LINE Login</span>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center mb-5">
+          <div className="border-t border-slate-800 w-full" />
+          <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+            หรือเข้าสู่ระบบด้วย Username
+          </span>
+          <div className="border-t border-slate-800 w-full" />
+        </div>
+
         {/* Form Fields */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -207,7 +263,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="กรอกชื่อผู้ใช้ เช่น admin หรือ seller_s01"
+                placeholder="เช่น admin หรือ seller_s01"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
               />
             </div>
@@ -215,7 +271,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              รหัสผ่าน / PIN 4 หลัก
+              รหัส PIN 4 หลัก
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -232,7 +288,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
               >
                 {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -241,7 +297,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading || isLineLoading}
             className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/25 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-2 cursor-pointer"
           >
             {isLoading ? (
@@ -261,3 +317,4 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     </div>
   );
 };
+

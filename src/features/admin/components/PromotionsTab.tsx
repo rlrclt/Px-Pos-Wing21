@@ -27,7 +27,14 @@ import { useToast } from "../../../hooks/useToast.ts";
 import { AdminSectionHeader } from "./ui/AdminSectionHeader.tsx";
 import { AdminStatCard } from "./ui/AdminStatCard.tsx";
 import { CreatePromotionModal } from "./CreatePromotionModal.tsx";
-import { getTodayDateString, isPromotionActive, formatPromoDateTime } from "../../promotions/promotionEngine.ts";
+import { 
+  getTodayDateString, 
+  isPromotionActive, 
+  isPromoUpcoming, 
+  isPromoExpired, 
+  parsePromoDateMs, 
+  formatPromoDateTime 
+} from "../../promotions/promotionEngine.ts";
 
 interface PromotionsTabProps {
   promotions: Promotion[];
@@ -70,14 +77,16 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
   // Compute KPI summary stats
   const stats = useMemo(() => {
     let activeCount = 0;
+    let upcomingCount = 0;
+    let expiredOrInactiveCount = 0;
     let bogoCount = 0;
     let discountCount = 0;
-    let expiredOrInactiveCount = 0;
 
     promotions.forEach(p => {
-      const active = isPromotionActive(p, today);
-      if (active) {
+      if (isPromotionActive(p, today)) {
         activeCount += 1;
+      } else if (isPromoUpcoming(p)) {
+        upcomingCount += 1;
       } else {
         expiredOrInactiveCount += 1;
       }
@@ -91,6 +100,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
     return {
       activeCount,
+      upcomingCount,
       bogoCount,
       discountCount,
       expiredOrInactiveCount,
@@ -122,9 +132,9 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
       if (statusFilter === "active") {
         if (!isPromotionActive(promo, today)) return false;
       } else if (statusFilter === "upcoming") {
-        if (promo.start_date <= today || promo.is_active === false) return false;
+        if (!isPromoUpcoming(promo)) return false;
       } else if (statusFilter === "expired") {
-        if (promo.is_active !== false && promo.end_date >= today) return false;
+        if (!isPromoExpired(promo)) return false;
       }
 
       // Type filter
@@ -211,9 +221,8 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
     }
 
     const now = Date.now();
-    const startMs = promo.start_date ? new Date(promo.start_date).getTime() : 0;
-    const endStr = promo.end_date ? (promo.end_date.length === 10 ? promo.end_date + 'T23:59:59' : promo.end_date) : '';
-    const endMs = endStr ? new Date(endStr).getTime() : Infinity;
+    const startMs = parsePromoDateMs(promo.start_date) ?? 0;
+    const endMs = parsePromoDateMs(promo.end_date, true) ?? Infinity;
 
     if (startMs > now) {
       const diffHours = Math.ceil((startMs - now) / (1000 * 60 * 60));
@@ -364,7 +373,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
         <AdminStatCard
           title="หมดอายุหรือปิดอยู่"
           value={stats.expiredOrInactiveCount}
-          subtitle="ไม่ได้เปิดใช้หน้าร้าน"
+          subtitle="นับเฉพาะที่หมดอายุ/ปิดแล้ว"
           icon={Clock}
           accentColor="#EF4444"
         />
@@ -660,7 +669,9 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
                   {/* Metadata: Date Range & Cost Burden */}
                   <div className="space-y-1.5 pt-1">
-                    <div className="flex items-start justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
+                    <div className={`flex items-start justify-between text-xs gap-2 ${
+                      isLight ? "text-slate-500" : "text-slate-400"
+                    }`}>
                       <span className="flex items-center gap-1 shrink-0">
                         <Calendar className="w-3.5 h-3.5" />
                         <span>ระยะเวลา:</span>
@@ -670,7 +681,9 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <div className={`flex items-center justify-between text-xs ${
+                      isLight ? "text-slate-500" : "text-slate-400"
+                    }`}>
                       <span>ผู้รับภาระส่วนลด:</span>
                       {renderBurdenPill(promo.absorbed_by)}
                     </div>
@@ -678,7 +691,9 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                 </div>
 
                 {/* Card Action Footer */}
-                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-[#21262d] flex items-center justify-between gap-2">
+                <div className={`pt-4 mt-4 border-t flex items-center justify-between gap-2 ${
+                  isLight ? "border-slate-100" : "border-[#21262d]"
+                }`}>
                   {/* Quick Active Toggle */}
                   <div className="flex items-center gap-2">
                     <button
@@ -763,7 +778,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                   <th className="py-3.5 px-4 text-right">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-[#21262d]">
+              <tbody className={`divide-y ${isLight ? "divide-slate-100" : "divide-[#21262d]"}`}>
                 {filteredPromotions.map((promo) => {
                   const product = productMap.get(promo.target_barcode);
                   const seller = product?.seller_id ? sellerMap.get(product.seller_id) : undefined;

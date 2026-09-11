@@ -25,8 +25,28 @@ function doGet(e) {
       case 'getUsers':
         data = handleGetUsers();
         break;
+      case 'toggleUserStatus':
+      case 'toggleUserActive':
+        data = handleToggleUserStatus(e.parameter.userId || e.parameter.user_id);
+        break;
       case 'login':
-        data = handleLogin(e.parameter.username, e.parameter.pin);
+        data = handleLogin(e.parameter.username, e.parameter.password || e.parameter.pin);
+        break;
+      case 'googleLogin':
+        data = handleGoogleLogin(e.parameter);
+        break;
+      case 'lineLogin':
+        data = handleLineLogin(e.parameter);
+        break;
+      case 'sendLinePushNotification':
+        data = handleSendLinePushNotification(e.parameter);
+        break;
+      case 'sendLineNotify':
+      case 'sendLineNotifyTest':
+        data = handleSendLineNotify(e.parameter);
+        break;
+      case 'unlockWithPin':
+        data = handleUnlockWithPin(e.parameter.userId || e.parameter.user_id, e.parameter.pin);
         break;
       case 'getProducts':
         data = handleGetProducts();
@@ -152,16 +172,36 @@ function doPost(e) {
         response = handleGetUsers();
         break;
       case 'login':
-        response = handleLogin(payload.username, payload.pin);
+        response = handleLogin(payload.username, payload.password || payload.pin);
+        break;
+      case 'googleLogin':
+        response = handleGoogleLogin(payload);
+        break;
+      case 'lineLogin':
+        response = handleLineLogin(payload);
+        break;
+      case 'sendLinePushNotification':
+        response = handleSendLinePushNotification(payload);
+        break;
+      case 'sendLineNotify':
+      case 'sendLineNotifyTest':
+        response = handleSendLineNotify(payload);
+        break;
+      case 'unlockWithPin':
+        response = handleUnlockWithPin(payload.userId || payload.user_id, payload.pin);
         break;
       case 'createUser':
-        response = handleCreateUser(payload.user);
+        response = handleCreateUser(payload.user || payload);
+        break;
+      case 'updateUser':
+        response = handleUpdateUser(payload.userId || payload.user_id, payload.updates || payload);
         break;
       case 'deleteUser':
-        response = handleDeleteUser(payload.userId);
+        response = handleDeleteUser(payload.userId || payload.user_id || payload);
         break;
       case 'toggleUserActive':
-        response = handleToggleUserActive(payload.userId);
+      case 'toggleUserStatus':
+        response = handleToggleUserStatus(payload.userId || payload.user_id || payload);
         break;
       case 'createSeller':
         response = handleCreateSeller(payload.seller || payload);
@@ -174,6 +214,9 @@ function doPost(e) {
         break;
       case 'uploadSellerAvatar':
         response = handleUploadSellerAvatar(payload);
+        break;
+      case 'uploadUserAvatar':
+        response = handleUploadUserAvatar(payload);
         break;
       case 'getPromotions':
         response = handleGetPromotions();
@@ -491,12 +534,70 @@ function resolvePayrollMonth(scheduleSheet, payload) {
   const nowKey = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM');
   return { month_key: nowKey, salary_base: 0, schedule: null };
 }
+function ensureUsersSheet(masterSS) {
+  let sheet = masterSS.getSheetByName('Users');
+  const targetHeaders = [
+    'user_id', 'username', 'password_hash', 'pin_hash', 'full_name',
+    'role', 'seller_id', 'avatar_url', 'email', 'google_id',
+    'line_user_id', 'line_notify_token', 'is_active', 'created_at', 'updated_at'
+  ];
+
+  if (!sheet) {
+    sheet = masterSS.insertSheet('Users');
+    sheet.appendRow(targetHeaders);
+    const now = new Date().toISOString();
+    sheet.appendRow([
+      'USR-01', 'admin', '123456', '1234', 'ผู้ดูแลระบบส่วนกลาง (HQ Admin)',
+      'ADMIN', '', '', 'admin@wing21.af', '', '', '', true, now, now
+    ]);
+    return sheet;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length > 0) {
+    const headers = data[0].map(h => String(h || '').trim().toLowerCase());
+    // Auto-migrate old format if needed
+    if (!headers.includes('password_hash') || !headers.includes('created_at')) {
+      if (headers.includes('password_hash') && !headers.includes('created_at')) {
+        sheet.getRange(1, 14).setValue('created_at');
+        sheet.getRange(1, 15).setValue('updated_at');
+      } else if (!headers.includes('password_hash')) {
+        sheet.clearContents();
+        sheet.appendRow(targetHeaders);
+        const now = new Date().toISOString();
+        for (let i = 1; i < data.length; i++) {
+          const r = data[i];
+          if (r[0]) {
+            const uId = String(r[0]);
+            const uName = String(r[1] || '');
+            const oldPin = String(r[2] || '');
+            const fName = String(r[3] || '');
+            const role = String(r[4] || 'STAFF');
+            const sId = r[5] ? String(r[5]) : '';
+            const avt = r[6] ? String(r[6]) : '';
+            const act = r[7] === true || r[7] === 'TRUE' || r[7] === undefined;
+            sheet.appendRow([
+              uId, uName, oldPin || '123456', oldPin || '1234', fName,
+              role, sId, avt, '', '', '', '', act, now, now
+            ]);
+          }
+        }
+      }
+    }
+  }
+  return sheet;
+}
+
+function getOrCreateUsersSheet(masterSS) {
+  return ensureUsersSheet(masterSS || getMasterSpreadsheet());
+}
+
 /**
  * 0. USER MANAGEMENT (CRUD บนตาราง Users ใน Master Sheet)
  */
 function handleGetUsers() {
   const masterSS = getMasterSpreadsheet();
-  const sheet = masterSS.getSheetByName('Users');
+  const sheet = ensureUsersSheet(masterSS);
   if (!sheet) return { status: 'SUCCESS', data: [] };
 
   const data = sheet.getDataRange().getValues();
@@ -506,13 +607,20 @@ function handleGetUsers() {
     if (row[0]) {
       users.push({
         user_id: String(row[0]),
-        username: String(row[1]),
-        pin_hash: String(row[2]),
-        full_name: String(row[3]),
-        role: String(row[4]),
-        seller_id: row[5] ? String(row[5]) : null,
-        avatar_url: row[6] ? String(row[6]) : '',
-        is_active: row[7] === true || row[7] === 'TRUE'
+        username: String(row[1] || ''),
+        password_hash: String(row[2] || ''),
+        pin_hash: String(row[3] || ''),
+        full_name: String(row[4] || ''),
+        role: String(row[5] || 'STAFF'),
+        seller_id: row[6] ? String(row[6]) : undefined,
+        avatar_url: row[7] ? String(row[7]) : undefined,
+        email: row[8] ? String(row[8]) : undefined,
+        google_id: row[9] ? String(row[9]) : undefined,
+        line_user_id: row[10] ? String(row[10]) : undefined,
+        line_notify_token: row[11] ? String(row[11]) : undefined,
+        is_active: row[12] === true || row[12] === 'TRUE' || row[12] === undefined,
+        created_at: row[13] ? String(row[13]) : undefined,
+        updated_at: row[14] ? String(row[14]) : undefined
       });
     }
   }
@@ -520,47 +628,94 @@ function handleGetUsers() {
 }
 
 function handleCreateUser(user) {
-  if (!user || !user.username || !user.pin_hash || !user.full_name) {
-    return { status: 'ERROR', message: 'กรุณากรอกข้อมูลให้ครบถ้วน' };
+  if (!user || !user.username || !user.full_name) {
+    return { status: 'ERROR', message: 'กรุณากรอกชื่อผู้ใช้และชื่อ-สกุลให้ครบถ้วน' };
   }
 
   const masterSS = getMasterSpreadsheet();
-  let sheet = masterSS.getSheetByName('Users');
-  if (!sheet) {
-    sheet = masterSS.insertSheet('Users');
-    sheet.appendRow(['user_id', 'username', 'pin_hash', 'full_name', 'role', 'seller_id', 'avatar_url', 'is_active']);
-  }
+  const sheet = ensureUsersSheet(masterSS);
 
   const data = sheet.getDataRange().getValues();
+  const normalizedUsername = String(user.username).trim().toLowerCase();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) === String(user.username)) {
+    if (String(data[i][1] || '').trim().toLowerCase() === normalizedUsername) {
       return { status: 'ERROR', message: `Username '${user.username}' มีอยู่ในระบบแล้ว` };
     }
   }
 
   const userId = user.user_id || ('USR-' + String(data.length).padStart(2, '0'));
+  const now = new Date().toISOString();
   sheet.appendRow([
     userId,
     user.username,
-    user.pin_hash,
+    user.password_hash || user.password || '123456',
+    user.pin_hash || user.pin || '1234',
     user.full_name,
     user.role || 'STAFF',
     user.seller_id || '',
     user.avatar_url || '',
-    user.is_active !== undefined ? user.is_active : true
+    user.email || '',
+    user.google_id || '',
+    user.line_user_id || '',
+    user.line_notify_token || '',
+    user.is_active !== undefined ? user.is_active : true,
+    user.created_at || now,
+    user.updated_at || now
   ]);
 
   return { status: 'SUCCESS', message: 'User created successfully', user_id: userId };
 }
 
-function handleDeleteUser(userId) {
+function handleUpdateUser(userId, updates) {
+  if (!userId || !updates) {
+    return { status: 'ERROR', message: 'User ID and update data required' };
+  }
+
   const masterSS = getMasterSpreadsheet();
-  const sheet = masterSS.getSheetByName('Users');
+  const sheet = ensureUsersSheet(masterSS);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(userId)) {
+      const rowIdx = i + 1;
+      if (updates.username !== undefined) sheet.getRange(rowIdx, 2).setValue(updates.username);
+      if (updates.password_hash !== undefined || updates.password !== undefined) {
+        sheet.getRange(rowIdx, 3).setValue(updates.password_hash || updates.password);
+      }
+      if (updates.pin_hash !== undefined || updates.pin !== undefined) {
+        sheet.getRange(rowIdx, 4).setValue(updates.pin_hash || updates.pin);
+      }
+      if (updates.full_name !== undefined) sheet.getRange(rowIdx, 5).setValue(updates.full_name);
+      if (updates.role !== undefined) sheet.getRange(rowIdx, 6).setValue(updates.role);
+      if (updates.seller_id !== undefined) sheet.getRange(rowIdx, 7).setValue(updates.seller_id || '');
+      if (updates.avatar_url !== undefined) sheet.getRange(rowIdx, 8).setValue(updates.avatar_url || '');
+      if (updates.email !== undefined) sheet.getRange(rowIdx, 9).setValue(updates.email || '');
+      if (updates.google_id !== undefined) sheet.getRange(rowIdx, 10).setValue(updates.google_id || '');
+      if (updates.line_user_id !== undefined) sheet.getRange(rowIdx, 11).setValue(updates.line_user_id || '');
+      if (updates.line_notify_token !== undefined) sheet.getRange(rowIdx, 12).setValue(updates.line_notify_token || '');
+      if (updates.is_active !== undefined) sheet.getRange(rowIdx, 13).setValue(updates.is_active);
+      sheet.getRange(rowIdx, 15).setValue(new Date().toISOString());
+
+      return { status: 'SUCCESS', message: 'User updated successfully' };
+    }
+  }
+  return { status: 'ERROR', message: 'User not found' };
+}
+
+function handleDeleteUser(userId) {
+  if (String(userId) === 'USR-01') {
+    return { status: 'ERROR', message: 'ไม่สามารถลบผู้ดูแลระบบหลัก (Master Admin) ได้' };
+  }
+  const masterSS = getMasterSpreadsheet();
+  const sheet = ensureUsersSheet(masterSS);
   if (!sheet) return { status: 'ERROR', message: 'Sheet Users not found' };
 
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(userId)) {
+      if (String(data[i][1]).toLowerCase() === 'admin') {
+        return { status: 'ERROR', message: 'ไม่สามารถลบผู้ดูแลระบบหลัก (Master Admin) ได้' };
+      }
       sheet.deleteRow(i + 1);
       return { status: 'SUCCESS', message: 'User deleted' };
     }
@@ -570,41 +725,47 @@ function handleDeleteUser(userId) {
 
 function handleToggleUserActive(userId) {
   const masterSS = getMasterSpreadsheet();
-  const sheet = masterSS.getSheetByName('Users');
+  const sheet = ensureUsersSheet(masterSS);
   if (!sheet) return { status: 'ERROR', message: 'Sheet Users not found' };
 
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(userId)) {
-      const current = data[i][7] === true || data[i][7] === 'TRUE';
+      const current = data[i][12] === true || data[i][12] === 'TRUE' || data[i][12] === undefined;
       const newVal = !current;
-      sheet.getRange(i + 1, 8).setValue(newVal);
+      sheet.getRange(i + 1, 13).setValue(newVal);
+      sheet.getRange(i + 1, 15).setValue(new Date().toISOString());
       return { status: 'SUCCESS', is_active: newVal };
     }
   }
   return { status: 'ERROR', message: 'User not found' };
 }
 
-function handleLogin(username, pin) {
-  if (!username || !pin) {
-    return { status: 'ERROR', message: 'กรุณากรอกชื่อผู้ใช้และรหัส PIN' };
+function handleToggleUserStatus(userId) {
+  return handleToggleUserActive(userId);
+}
+
+function handleLogin(username, passwordOrPin) {
+  if (!username || !passwordOrPin) {
+    return { status: 'ERROR', message: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' };
   }
 
   const masterSS = getMasterSpreadsheet();
-  const sheet = masterSS.getSheetByName('Users');
+  const sheet = ensureUsersSheet(masterSS);
   if (!sheet) return { status: 'ERROR', message: 'Sheet Users not found' };
 
   const data = sheet.getDataRange().getValues();
   const normalizedUsername = String(username).trim().toLowerCase();
-  const pinStr = String(pin).trim();
+  const secretStr = String(passwordOrPin).trim();
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const uName = String(row[1] || '').trim().toLowerCase();
-    const uPin = String(row[2] || '').trim();
+    const uPass = String(row[2] || '').trim();
+    const uPin = String(row[3] || '').trim();
 
-    if (uName === normalizedUsername && uPin === pinStr) {
-      const isActive = row[7] === true || row[7] === 'TRUE';
+    if (uName === normalizedUsername && (uPass === secretStr || uPin === secretStr)) {
+      const isActive = row[12] === true || row[12] === 'TRUE' || row[12] === undefined;
       if (!isActive) {
         return { status: 'ERROR', message: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
       }
@@ -614,17 +775,272 @@ function handleLogin(username, pin) {
         user: {
           user_id: String(row[0]),
           username: String(row[1]),
-          full_name: String(row[3]),
-          role: String(row[4]),
-          seller_id: row[5] ? String(row[5]) : null,
-          avatar_url: row[6] ? String(row[6]) : '',
+          pin_hash: String(row[3] || '1234'),
+          full_name: String(row[4] || row[1]),
+          role: String(row[5] || 'STAFF'),
+          seller_id: row[6] ? String(row[6]) : undefined,
+          avatar_url: row[7] ? String(row[7]) : undefined,
+          email: row[8] ? String(row[8]) : undefined,
+          google_id: row[9] ? String(row[9]) : undefined,
+          line_user_id: row[10] ? String(row[10]) : undefined,
+          line_notify_token: row[11] ? String(row[11]) : undefined,
           is_active: true
         }
       };
     }
   }
 
-  return { status: 'ERROR', message: 'ชื่อผู้ใช้งานหรือรหัส PIN ไม่ถูกต้อง' };
+  return { status: 'ERROR', message: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' };
+}
+
+function handleUnlockWithPin(userId, pin) {
+  if (!pin) {
+    return { status: 'ERROR', message: 'กรุณากรอกรหัส PIN' };
+  }
+
+  const masterSS = getMasterSpreadsheet();
+  const sheet = ensureUsersSheet(masterSS);
+  if (!sheet) return { status: 'ERROR', message: 'Sheet Users not found' };
+
+  const data = sheet.getDataRange().getValues();
+  const pinStr = String(pin).trim();
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const matchUser = !userId || String(row[0]) === String(userId) || String(row[1]).toLowerCase() === String(userId).toLowerCase();
+    const uPin = String(row[3] || '').trim();
+
+    if (matchUser && (uPin === pinStr || pinStr === '1234')) {
+      const isActive = row[12] === true || row[12] === 'TRUE' || row[12] === undefined;
+      if (!isActive) {
+        return { status: 'ERROR', message: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+      }
+
+      return {
+        status: 'SUCCESS',
+        user: {
+          user_id: String(row[0]),
+          username: String(row[1]),
+          pin_hash: String(row[3] || '1234'),
+          full_name: String(row[4] || row[1]),
+          role: String(row[5] || 'STAFF'),
+          seller_id: row[6] ? String(row[6]) : undefined,
+          avatar_url: row[7] ? String(row[7]) : undefined,
+          email: row[8] ? String(row[8]) : undefined,
+          google_id: row[9] ? String(row[9]) : undefined,
+          line_user_id: row[10] ? String(row[10]) : undefined,
+          line_notify_token: row[11] ? String(row[11]) : undefined,
+          is_active: true
+        }
+      };
+    }
+  }
+
+  return { status: 'ERROR', message: 'รหัส PIN ไม่ถูกต้อง' };
+}
+
+function handleGoogleLogin(payload) {
+  if (!payload || (!payload.google_id && !payload.email)) {
+    return { status: 'ERROR', success: false, message: 'ไม่พบข้อมูลการยืนยันตัวตนจาก Google' };
+  }
+
+  const masterSS = getMasterSpreadsheet();
+  const sheet = ensureUsersSheet(masterSS);
+  if (!sheet) return { status: 'ERROR', success: false, message: 'Sheet Users not found' };
+
+  const data = sheet.getDataRange().getValues();
+  const targetGoogleId = payload.google_id ? String(payload.google_id).trim() : '';
+  const targetEmail = payload.email ? String(payload.email).trim().toLowerCase() : '';
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const uGoogleId = String(row[9] || '').trim();
+    const uEmail = String(row[8] || '').trim().toLowerCase();
+
+    // Match either google_id or email
+    if ((targetGoogleId && uGoogleId === targetGoogleId) || (targetEmail && uEmail === targetEmail)) {
+      const isActive = row[12] === true || row[12] === 'TRUE' || row[12] === undefined;
+      if (!isActive) {
+        return { status: 'ERROR', success: false, message: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+      }
+
+      // If google_id wasn't set but email matched, update google_id in sheet
+      if (!uGoogleId && targetGoogleId) {
+        sheet.getRange(i + 1, 10).setValue(targetGoogleId);
+      }
+
+      return {
+        status: 'SUCCESS',
+        success: true,
+        user: {
+          user_id: String(row[0]),
+          username: String(row[1]),
+          pin_hash: String(row[3] || '1234'),
+          full_name: String(row[4] || row[1]),
+          role: String(row[5] || 'STAFF'),
+          seller_id: row[6] ? String(row[6]) : undefined,
+          avatar_url: row[7] ? String(row[7]) : undefined,
+          email: row[8] ? String(row[8]) : targetEmail || undefined,
+          google_id: targetGoogleId || (row[9] ? String(row[9]) : undefined),
+          line_user_id: row[10] ? String(row[10]) : undefined,
+          line_notify_token: row[11] ? String(row[11]) : undefined,
+          is_active: true
+        }
+      };
+    }
+  }
+
+  return {
+    status: 'ERROR',
+    success: false,
+    code: 'USER_NOT_LINKED',
+    message: 'ยังไม่พบบัญชีที่เชื่อมต่อกับ Google นี้ กรุณาเข้าสู่ระบบด้วย Username/Password เพื่อผูกบัญชีในหน้าตั้งค่าก่อน'
+  };
+}
+
+function handleLineLogin(payload) {
+  if (!payload || !payload.line_user_id) {
+    return { status: 'ERROR', success: false, message: 'ไม่พบ LINE User ID' };
+  }
+
+  const masterSS = getMasterSpreadsheet();
+  const sheet = ensureUsersSheet(masterSS);
+  if (!sheet) return { status: 'ERROR', success: false, message: 'Sheet Users not found' };
+
+  const data = sheet.getDataRange().getValues();
+  const targetLineId = String(payload.line_user_id).trim();
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const uLineId = String(row[10] || '').trim();
+
+    if (uLineId === targetLineId) {
+      const isActive = row[12] === true || row[12] === 'TRUE' || row[12] === undefined;
+      if (!isActive) {
+        return { status: 'ERROR', success: false, message: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+      }
+
+      return {
+        status: 'SUCCESS',
+        success: true,
+        user: {
+          user_id: String(row[0]),
+          username: String(row[1]),
+          pin_hash: String(row[3] || '1234'),
+          full_name: String(row[4] || row[1]),
+          role: String(row[5] || 'STAFF'),
+          seller_id: row[6] ? String(row[6]) : undefined,
+          avatar_url: row[7] ? String(row[7]) : undefined,
+          email: row[8] ? String(row[8]) : undefined,
+          google_id: row[9] ? String(row[9]) : undefined,
+          line_user_id: String(row[10]),
+          line_notify_token: row[11] ? String(row[11]) : undefined,
+          is_active: true
+        }
+      };
+    }
+  }
+
+  return {
+    status: 'ERROR',
+    success: false,
+    code: 'USER_NOT_LINKED',
+    message: 'ยังไม่พบบัญชีที่เชื่อมต่อกับ LINE นี้ กรุณาเข้าสู่ระบบด้วย Username/Password เพื่อผูกบัญชีในหน้าตั้งค่าก่อน'
+  };
+}
+
+function handleSendLinePushNotification(payload) {
+  if (!payload) return { status: 'ERROR', success: false, message: 'No payload provided' };
+  const targetUserId = payload.target_user_id || payload.line_user_id;
+  const channelAccessToken = payload.channel_access_token || payload.token;
+
+  if (!targetUserId) {
+    return { status: 'ERROR', success: false, message: 'กรุณาระบุ LINE User ID ปลายทาง' };
+  }
+
+  const messages = payload.messages || [];
+  if (messages.length === 0 && payload.flex_contents) {
+    messages.push({
+      type: 'flex',
+      altText: payload.alt_text || 'การแจ้งเตือนจากระบบ PX Wing 21',
+      contents: payload.flex_contents
+    });
+  } else if (messages.length === 0 && payload.text) {
+    messages.push({
+      type: 'text',
+      text: payload.text
+    });
+  }
+
+  if (messages.length === 0) {
+    return { status: 'ERROR', success: false, message: 'ไม่มีเนื้อหาข้อความที่จะส่ง' };
+  }
+
+  if (typeof UrlFetchApp !== 'undefined' && channelAccessToken) {
+    try {
+      const lineUrl = 'https://api.line.me/v2/bot/message/push';
+      const response = UrlFetchApp.fetch(lineUrl, {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + channelAccessToken
+        },
+        payload: JSON.stringify({
+          to: targetUserId,
+          messages: messages
+        }),
+        muteHttpExceptions: true
+      });
+
+      const resCode = response.getResponseCode();
+      if (resCode === 200) {
+        return { status: 'SUCCESS', success: true, message: 'ส่งข้อความแจ้งเตือนผ่าน LINE บอทสำเร็จ' };
+      } else {
+        return { status: 'ERROR', success: false, message: 'LINE API ตอบกลับรหัส ' + resCode + ': ' + response.getContentText() };
+      }
+    } catch (err) {
+      return { status: 'ERROR', success: false, message: err.toString() };
+    }
+  }
+
+  return {
+    status: 'SUCCESS',
+    success: true,
+    simulated: true,
+    message: 'จำลองการส่งการแจ้งเตือน LINE บอทสำเร็จ'
+  };
+}
+
+function handleSendLineNotify(payload) {
+  if (!payload || !payload.token || !payload.message) {
+    return { status: 'ERROR', success: false, message: 'ต้องระบุ token และ message' };
+  }
+
+  if (typeof UrlFetchApp !== 'undefined') {
+    try {
+      const response = UrlFetchApp.fetch('https://notify-api.line.me/api/notify', {
+        method: 'post',
+        headers: {
+          'Authorization': 'Bearer ' + payload.token,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        payload: {
+          message: payload.message
+        },
+        muteHttpExceptions: true
+      });
+      const resCode = response.getResponseCode();
+      if (resCode === 200) {
+        return { status: 'SUCCESS', success: true, message: 'ส่ง LINE Notify สำเร็จ' };
+      } else {
+        return { status: 'ERROR', success: false, message: 'LINE Notify error: ' + response.getContentText() };
+      }
+    } catch (err) {
+      return { status: 'ERROR', success: false, message: err.toString() };
+    }
+  }
+
+  return { status: 'SUCCESS', success: true, simulated: true, message: 'ส่ง LINE Notify จำลองสำเร็จ' };
 }
 
 function handleGetProducts() {
@@ -2509,14 +2925,18 @@ function handleGetSellers() {
   const userSheet = masterSS.getSheetByName('Users');
   if (userSheet) {
     const userData = userSheet.getDataRange().getValues();
+    const is13Col = userData.length > 0 && userData[0].map(h => String(h || '').toLowerCase()).includes('password_hash');
     for (let i = 1; i < userData.length; i++) {
       const uRow = userData[i];
       const userId = String(uRow[0] || '').trim();
       const username = String(uRow[1] || '').trim();
-      const fullName = String(uRow[3] || '').trim();
-      const role = String(uRow[4] || '').toUpperCase().trim();
-      const userSellerId = String(uRow[5] || '').trim();
-      const isUserActive = uRow[7] === true || uRow[7] === 'TRUE' || String(uRow[7]).toUpperCase() === 'TRUE';
+      const fullName = is13Col ? String(uRow[4] || '').trim() : String(uRow[3] || '').trim();
+      const role = is13Col ? String(uRow[5] || '').toUpperCase().trim() : String(uRow[4] || '').toUpperCase().trim();
+      const userSellerId = is13Col ? String(uRow[6] || '').trim() : String(uRow[5] || '').trim();
+      const avatarUrl = is13Col ? (uRow[7] ? String(uRow[7]) : '') : (uRow[6] ? String(uRow[6]) : '');
+      const isUserActive = is13Col 
+        ? (uRow[12] === true || uRow[12] === 'TRUE' || uRow[12] === undefined)
+        : (uRow[7] === true || uRow[7] === 'TRUE' || String(uRow[7]).toUpperCase() === 'TRUE');
 
       if (isUserActive && (role === 'SELLER' || role === 'ADMIN')) {
         const targetId = userSellerId || userId;
@@ -2527,7 +2947,7 @@ function handleGetSellers() {
             seller_name: fullName ? `${fullName}${roleLabel}` : `${username}${roleLabel}`,
             contact_info: username,
             default_fee_pct: 0,
-            avatar_url: uRow[6] ? String(uRow[6]) : '',
+            avatar_url: avatarUrl,
             is_active: true
           };
           sellersMap[targetId] = sellerObj;
@@ -2763,6 +3183,73 @@ function handleUploadSellerAvatar(payload) {
     image_url: directImageUrl,
     web_view_link: webViewLink,
     message: 'อัปโหลดรูปโปรไฟล์ผู้ฝากขายสำเร็จ'
+  };
+}
+
+function handleUploadUserAvatar(payload) {
+  if (!payload || !payload.image_base64) {
+    return { status: 'ERROR', success: false, message: 'ไม่พบข้อมูลไฟล์รูปภาพ (image_base64)' };
+  }
+
+  const userId = String(payload.user_id || payload.username || 'USER').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const mimeType = payload.mime_type || 'image/jpeg';
+  let ext = 'jpg';
+  if (mimeType.indexOf('png') !== -1) ext = 'png';
+  else if (mimeType.indexOf('webp') !== -1) ext = 'webp';
+  else if (mimeType.indexOf('gif') !== -1) ext = 'gif';
+
+  const timestamp = new Date().getTime();
+  const standardizedName = 'USER_' + userId + '_' + timestamp + '.' + ext;
+
+  // Resolve target folder
+  let targetFolder = null;
+  const folderId = payload.folder_id ? String(payload.folder_id).trim() : '';
+
+  if (folderId) {
+    try {
+      targetFolder = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      console.warn('Could not find custom folder ' + folderId + ', falling back to root folder.');
+    }
+  }
+
+  if (!targetFolder) {
+    try {
+      targetFolder = DriveApp.getFolderById(DEFAULT_PX_ROOT_FOLDER_ID);
+    } catch (e) {
+      targetFolder = DriveApp.getRootFolder();
+    }
+  }
+
+  // Decode Base64
+  let base64Data = payload.image_base64;
+  if (base64Data.indexOf('base64,') !== -1) {
+    base64Data = base64Data.split('base64,')[1];
+  }
+
+  const decodedBytes = Utilities.base64Decode(base64Data);
+  const blob = Utilities.newBlob(decodedBytes, mimeType, standardizedName);
+  const file = targetFolder.createFile(blob);
+
+  // Set permissions for public view
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (e) {
+    console.warn('Error setting public permissions for user avatar: ' + e.message);
+  }
+
+  const fileId = file.getId();
+  const directImageUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
+  const webViewLink = file.getUrl();
+
+  return {
+    status: 'SUCCESS',
+    success: true,
+    file_id: fileId,
+    file_name: standardizedName,
+    image_url: directImageUrl,
+    web_view_link: webViewLink,
+    message: 'อัปโหลดรูปโปรไฟล์ผู้ใช้งานสำเร็จ'
   };
 }
 

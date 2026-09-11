@@ -1,10 +1,11 @@
-import { Wifi, WifiOff, Moon, Sun, LogOut } from 'lucide-react';
+import { Wifi, WifiOff, Moon, Sun, LogOut, Lock } from 'lucide-react';
 import type { RoutePath, Theme } from '../../types/ui.ts';
 
 interface HeaderProps {
   currentPath: RoutePath;
   onNavigate: (path: RoutePath) => void;
   onLogout: () => void;
+  onLock?: () => void;
   currentUser: { name: string; role: string } | null;
   isOnline: boolean;
   theme: Theme;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export function Header({
   onLogout,
+  onLock,
   currentUser,
   isOnline,
   theme,
@@ -90,6 +92,21 @@ export function Header({
               </span>
             )}
           </div>
+
+          {onLock && (
+            <button
+              onClick={onLock}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                isLight 
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200 hover:border-amber-300' 
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20 hover:border-amber-500/30'
+              }`}
+              title="ล็อคหน้าจอชั่วคราว (PIN Lock)"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ล็อค</span>
+            </button>
+          )}
 
           <button
             onClick={onLogout}

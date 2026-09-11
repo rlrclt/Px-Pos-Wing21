@@ -1,4 +1,4 @@
-import { LogIn, ShoppingCart } from 'lucide-react';
+import { LogIn, ShoppingCart, MessageSquare, Mail } from 'lucide-react';
 import type { User } from '../../../types/schema.ts';
 import type { RoutePath } from '../../../types/ui.ts';
 
@@ -19,18 +19,39 @@ export function UserCard({ user, onToggleStatus, onSelectRole }: UserCardProps) 
             className="w-8 h-8 rounded-full border border-slate-700 object-cover"
           />
           <div>
-            <div className="font-bold text-white">{user.full_name}</div>
-            <div className="text-[10px] text-slate-400">{user.user_id} {user.seller_id ? `(Ref: ${user.seller_id})` : ''}</div>
+            <div className="font-bold text-white flex items-center gap-1.5">
+              <span>{user.full_name}</span>
+              {user.email && (
+                <span title={`Google/Email: ${user.email}`} className="text-emerald-400">
+                  <Mail className="w-3 h-3 inline" />
+                </span>
+              )}
+              {user.line_user_id && (
+                <span title={`LINE: ${user.line_user_id}`} className="text-emerald-400">
+                  <MessageSquare className="w-3 h-3 inline" />
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] text-slate-400">
+              {user.user_id} {user.seller_id ? `(ร้าน: ${user.seller_id})` : ''}
+            </div>
           </div>
         </div>
       </td>
 
-      <td className="py-3 px-3 font-mono text-cyan-300">
+      <td className="py-3 px-3 font-mono text-cyan-300 font-semibold">
         {user.username}
       </td>
 
-      <td className="py-3 px-3 font-mono text-amber-300 font-bold">
-        {user.pin_hash}
+      <td className="py-3 px-3 font-mono text-xs">
+        <div className="text-slate-300">
+          <span className="text-[10px] text-slate-500 mr-1">Pass:</span>
+          {user.password_hash ? '••••••' : '-'}
+        </div>
+        <div className="text-amber-400 font-bold">
+          <span className="text-[10px] text-slate-500 mr-1">PIN:</span>
+          {user.pin_hash || '1234'}
+        </div>
       </td>
 
       <td className="py-3 px-3">

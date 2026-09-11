@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
-import type { Soldier, ProductCatalog, Seller, ProductUOMConversion, Promotion, AuthUser } from '../../types/schema.ts';
+import type { User, Soldier, ProductCatalog, Seller, ProductUOMConversion, Promotion, AuthUser } from '../../types/schema.ts';
 import type { AdminTab, RoutePath } from '../../types/ui.ts';
 import { api, type DriveFolder } from '../../core/api.ts';
 
@@ -10,6 +10,8 @@ import { WelfareTab } from './components/WelfareTab.tsx';
 import { BatchesTab, type BatchItem } from './components/BatchesTab.tsx';
 import { FoldersTab } from './components/FoldersTab.tsx';
 import { ProductsTab } from './components/ProductsTab.tsx';
+import { CatalogHubTab } from './components/CatalogHubTab.tsx';
+import { PersonnelManagementTab } from './components/PersonnelManagementTab.tsx';
 import { PromotionsTab } from './components/PromotionsTab.tsx';
 import { getTodayDateString, isPromotionActive } from '../promotions/promotionEngine.ts';
 import { DebugSheetModal } from './components/DebugSheetModal.tsx';
@@ -36,6 +38,8 @@ import { AdminSidebar } from './components/AdminSidebar.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DashboardTab } from './components/DashboardTab.tsx';
 import { OrdersTab } from './components/OrdersTab.tsx';
+import { ProfileTab } from './components/ProfileTab.tsx';
+import { useAuthStore } from '../../store/useAuthStore.ts';
 interface AdminViewProps {
   adminTab: AdminTab;
   setAdminTab: (tab: AdminTab) => void;
@@ -58,6 +62,7 @@ interface AdminViewProps {
   loadUOMs?: () => void;
   navigateTo: (path: RoutePath) => void;
   onLogout?: () => void;
+  onLock?: () => void;
   currentUser?: AuthUser | { name: string; role: string } | null;
   isOnline?: boolean;
   onToggleTheme?: () => void;
@@ -85,6 +90,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   loadUOMs,
   navigateTo,
   onLogout = () => {},
+  onLock,
   currentUser = null,
   isOnline = true,
   onToggleTheme = () => {}
@@ -321,6 +327,145 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }
   };
 
+  // Users State & CRUD Handlers
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  const loadUsers = useCallback(async () => {
+    setIsLoadingUsers(true);
+    try {
+      const data = await api.getUsers();
+      if (Array.isArray(data)) {
+        setUsers(data);
+      }
+    } catch (err: any) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const handleCreateUser = async (userData: Partial<User>): Promise<boolean> => {
+    const toastId = showToast({ type: 'loading', title: 'กำลังสร้างบัญชีผู้ใช้...' }, 0);
+    try {
+      const res = await api.createUser(userData);
+      dismissToast(toastId);
+      if (res.success) {
+        showToast({
+          type: 'success',
+          title: 'สร้างผู้ใช้สำเร็จ',
+          message: `${userData.full_name || userData.username}`
+        });
+        loadUsers();
+        return true;
+      }
+      showToast({ type: 'error', title: 'สร้างผู้ใช้ไม่สำเร็จ', message: res.error || 'เกิดข้อผิดพลาด' });
+      return false;
+    } catch (err: any) {
+      dismissToast(toastId);
+      showToast({ type: 'error', title: 'เกิดข้อผิดพลาด', message: err.message });
+      return false;
+    }
+  };
+
+  const handleUpdateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
+    const toastId = showToast({ type: 'loading', title: 'กำลังอัปเดตข้อมูลผู้ใช้...' }, 0);
+    try {
+      const res = await api.updateUser(userId, updates);
+      dismissToast(toastId);
+      if (res.success) {
+        showToast({
+          type: 'success',
+          title: 'อัปเดตผู้ใช้สำเร็จ',
+          message: updates.full_name || updates.username || 'บันทึกข้อมูลเรียบร้อย'
+        });
+        loadUsers();
+        return true;
+      }
+      showToast({ type: 'error', title: 'อัปเดตผู้ใช้ไม่สำเร็จ', message: res.error || 'เกิดข้อผิดพลาด' });
+      return false;
+    } catch (err: any) {
+      dismissToast(toastId);
+      showToast({ type: 'error', title: 'เกิดข้อผิดพลาด', message: err.message });
+      return false;
+    }
+  };
+
+  const handleUpdateProfile = async (userId: string, updates: Partial<User>): Promise<boolean> => {
+    const toastId = showToast({ type: 'loading', title: 'กำลังบันทึกข้อมูลโปรไฟล์...' }, 0);
+    try {
+      const res = await api.updateUser(userId, updates);
+      dismissToast(toastId);
+      if (res.success) {
+        useAuthStore.getState().updateCurrentUser(updates as Partial<AuthUser>);
+        showToast({
+          type: 'success',
+          title: 'บันทึกโปรไฟล์สำเร็จ',
+          message: updates.full_name || updates.username || 'อัปเดตข้อมูลผู้ใช้เรียบร้อย'
+        });
+        loadUsers();
+        return true;
+      }
+      showToast({ type: 'error', title: 'บันทึกโปรไฟล์ไม่สำเร็จ', message: res.error || 'เกิดข้อผิดพลาด' });
+      return false;
+    } catch (err: any) {
+      dismissToast(toastId);
+      showToast({ type: 'error', title: 'เกิดข้อผิดพลาด', message: err.message });
+      return false;
+    }
+  };
+
+  const handleDeleteUser = async (userId: string): Promise<boolean> => {
+    const toastId = showToast({ type: 'loading', title: 'กำลังลบบัญชีผู้ใช้...' }, 0);
+    try {
+      const res = await api.deleteUser(userId);
+      dismissToast(toastId);
+      if (res.success) {
+        showToast({
+          type: 'success',
+          title: 'ลบผู้ใช้สำเร็จ',
+          message: `ลบบัญชี ${userId} เรียบร้อย`
+        });
+        loadUsers();
+        return true;
+      }
+      showToast({ type: 'error', title: 'ลบผู้ใช้ไม่สำเร็จ', message: res.error || 'เกิดข้อผิดพลาด' });
+      return false;
+    } catch (err: any) {
+      dismissToast(toastId);
+      showToast({ type: 'error', title: 'เกิดข้อผิดพลาด', message: err.message });
+      return false;
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string): Promise<boolean> => {
+    try {
+      const res = await api.toggleUserStatus(userId);
+      if (res.success) {
+        showToast({
+          type: 'success',
+          title: 'เปลี่ยนสถานะสำเร็จ',
+          message: res.is_active ? 'เปิดใช้งานบัญชีแล้ว' : 'ระงับการใช้งานบัญชีแล้ว'
+        });
+        loadUsers();
+        return true;
+      }
+      showToast({ type: 'error', title: 'เปลี่ยนสถานะไม่สำเร็จ', message: res.error || 'เกิดข้อผิดพลาด' });
+      return false;
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'เกิดข้อผิดพลาด', message: err.message });
+      return false;
+    }
+  };
+
+  const handleToggleSellerStatus = async (sellerId: string, isActive: boolean) => {
+    await handleUpdateSeller(sellerId, { is_active: isActive });
+  };
+
   // Promotions State & CRUD Handlers
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [, setIsLoadingPromotions] = useState(false);
@@ -439,7 +584,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   // If user is SELLER, automatically redirect away from admin-only tabs
   useEffect(() => {
     if (currentUser?.role === 'SELLER') {
-      const adminOnlyTabs: AdminTab[] = ['dashboard', 'welfare', 'batches', 'folders'];
+      const adminOnlyTabs: AdminTab[] = ['dashboard', 'personnel', 'welfare', 'batches', 'folders'];
       if (adminOnlyTabs.includes(adminTab)) {
         setAdminTab('products');
       }
@@ -460,6 +605,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         loadProducts={loadProducts}
         loadSellers={loadSellers}
         loadPromotions={loadPromotions}
+        loadUsers={loadUsers}
         activePromosCount={activePromosCount}
         currentUser={currentUser as any}
       />
@@ -471,6 +617,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
           currentPath="/admin"
           onNavigate={navigateTo}
           onLogout={onLogout}
+          onLock={onLock}
+          onOpenProfile={() => setAdminTab('profile')}
           currentUser={currentUser}
           isOnline={isOnline}
           onToggleTheme={onToggleTheme}
@@ -480,6 +628,24 @@ export const AdminView: React.FC<AdminViewProps> = ({
         {/* Scrollable Main Area */}
         <main className="flex-1 overflow-auto p-4 lg:p-8">
           <AnimatePresence mode="wait">
+            {adminTab === 'profile' && (
+              <motion.div
+                key="profile"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ProfileTab
+                  currentUser={currentUser}
+                  users={users}
+                  onUpdateProfile={handleUpdateProfile}
+                  driveFolders={driveFolders}
+                  onRefreshUsers={loadUsers}
+                />
+              </motion.div>
+            )}
+
             {adminTab === 'dashboard' && (
               <motion.div
                 key="dashboard"
@@ -510,6 +676,62 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     setSalaryTopupSoldier(null);
                     setIsSalaryTopupOpen(true);
                   }}
+                />
+              </motion.div>
+            )}
+
+            {adminTab === 'personnel' && (
+              <motion.div
+                key="personnel"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <PersonnelManagementTab
+                  users={users}
+                  isLoadingUsers={isLoadingUsers}
+                  onCreateUser={handleCreateUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
+                  onToggleUserStatus={handleToggleUserStatus}
+                  onRefreshUsers={loadUsers}
+                  sellers={liveSellers}
+                  products={liveProducts}
+                  onCreateSeller={handleCreateSeller}
+                  onUpdateSeller={handleUpdateSeller}
+                  onDeleteSeller={handleDeleteSeller}
+                  onToggleSellerStatus={handleToggleSellerStatus}
+                  soldiers={adminSoldiers}
+                  isLoadingSoldiers={isLoadingAdmin}
+                  selectedBatchId={selectedBatchId}
+                  setSelectedBatchId={(id) => {
+                    setSelectedBatchId(id);
+                    loadAdminData(id);
+                  }}
+                  availableBatches={availableBatches}
+                  currentBatch={availableBatches.find(b => b.batch_id === selectedBatchId)}
+                  onOpenCreateSoldier={() => {
+                    setEditingSoldier(null);
+                    setIsSoldierFormOpen(true);
+                  }}
+                  onOpenEditSoldier={(soldier) => {
+                    setEditingSoldier(soldier);
+                    setIsSoldierFormOpen(true);
+                  }}
+                  onOpenDeleteSoldier={(soldier) => setDeletingSoldier(soldier)}
+                  onToggleSoldierStatus={handleToggleSoldierStatus}
+                  onOpenUploadSoldiers={() => setIsUploadSoldierOpen(true)}
+                  onOpenDownloadTemplate={() => setIsUploadSoldierOpen(true)}
+                  onOpenBatchUploadPhotos={() => setIsBatchPhotoUploadOpen(true)}
+                  onOpenSalaryTopup={(soldier) => {
+                    setSalaryTopupSoldier(soldier || null);
+                    setIsSalaryTopupOpen(true);
+                  }}
+                  onOpenMonthlyDeductions={() => setIsMonthlyDeductionsOpen(true)}
+                  onOpenPayrollCalendar={() => setIsPayrollCalendarOpen(true)}
+                  driveFolders={driveFolders}
+                  currentUser={formattedCurrentUser}
                 />
               </motion.div>
             )}
@@ -619,6 +841,59 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   onOpenLinkFolder={() => setIsLinkFolderOpen(true)}
                   onSetDefaultFolder={handleSetDefaultFolder}
                   onDeleteFolder={handleDeleteFolder}
+                />
+              </motion.div>
+            )}
+
+            {adminTab === 'catalog-hub' && (
+              <motion.div
+                key="catalog-hub"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CatalogHubTab
+                  products={liveProducts}
+                  sellers={liveSellers}
+                  isLoading={isLoadingProducts}
+                  productSearch={productSearch}
+                  onSearchChange={setProductSearch}
+                  categoryFilter={productCategoryFilter}
+                  onCategoryFilterChange={setProductCategoryFilter}
+                  onOpenAddProduct={() => {
+                    setEditingProduct(null);
+                    setIsProductFormOpen(true);
+                  }}
+                  onOpenEditProduct={(prod) => {
+                    setEditingProduct(prod);
+                    setIsProductFormOpen(true);
+                  }}
+                  onOpenDeleteProduct={(prod) => setDeletingProduct(prod)}
+                  onOpenStockIn={(barcode) => {
+                    setStockInBarcode(barcode);
+                    setIsStockInOpen(true);
+                  }}
+                  onOpenImportHub={() => setIsUploadProductOpen(true)}
+                  onOpenDownloadTemplate={() => setIsUploadProductOpen(true)}
+                  onOpenStockInHistory={() => {
+                    setStockInHistorySellerId(undefined);
+                    setIsStockInHistoryOpen(true);
+                  }}
+                  onOpenProductHistory={(prod) => setSelectedHistoryProduct(prod)}
+                  onOpenSellerHistory={(sellerId) => {
+                    setStockInHistorySellerId(sellerId);
+                    setIsStockInHistoryOpen(true);
+                  }}
+                  onCreateSeller={handleCreateSeller}
+                  onUpdateSeller={handleUpdateSeller}
+                  onDeleteSeller={handleDeleteSeller}
+                  driveFolders={driveFolders}
+                  liveUOMs={liveUOMs}
+                  onRefresh={() => {
+                    loadProducts();
+                    loadSellers();
+                  }}
                 />
               </motion.div>
             )}

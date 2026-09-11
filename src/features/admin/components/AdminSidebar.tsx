@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Shield, Users, FolderPlus, FolderOpen, Package, Command, Store, Wifi, Database, X,
-  ChevronLeft, ChevronRight, ReceiptText, Tag
+  ChevronLeft, ChevronRight, ReceiptText, Tag, LayoutGrid, UserCog, UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AdminTab } from '../../../types/ui.ts';
@@ -19,6 +19,7 @@ interface AdminSidebarProps {
   loadProducts?: () => void;
   loadSellers?: () => void;
   loadPromotions?: () => void;
+  loadUsers?: () => void;
   activePromosCount?: number;
   currentUser?: AuthUser | null;
 }
@@ -34,6 +35,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   loadProducts,
   loadSellers,
   loadPromotions,
+  loadUsers,
   activePromosCount,
   currentUser
 }) => {
@@ -55,9 +57,39 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       adminOnly: true
     },
     {
+      id: 'profile',
+      label: 'โปรไฟล์ & ความปลอดภัย',
+      icon: UserCheck,
+      adminOnly: false,
+      onSelect: () => {
+        if (loadUsers) loadUsers();
+      }
+    },
+    {
+      id: 'personnel',
+      label: 'จัดการผู้ใช้ & กำลังพล',
+      icon: UserCog,
+      badge: 'All-in-One',
+      adminOnly: true,
+      onSelect: () => {
+        if (loadUsers) loadUsers();
+        if (loadSellers) loadSellers();
+      }
+    },
+    {
       id: 'orders',
       label: 'ประวัติการซื้อขาย',
       icon: ReceiptText
+    },
+    {
+      id: 'catalog-hub',
+      label: 'ศูนย์สินค้า & ฝากขาย',
+      icon: LayoutGrid,
+      badge: 'Hub',
+      onSelect: () => {
+        if (loadProducts) loadProducts();
+        if (loadSellers) loadSellers();
+      }
     },
     {
       id: 'welfare',

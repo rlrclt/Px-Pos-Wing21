@@ -17,4 +17,4 @@ export type Theme = 'light' | 'dark';
 
 export type RoutePath = '/' | '/admin' | '/users' | '/pos' | '404';
 
-export type AdminTab = 'dashboard' | 'welfare' | 'batches' | 'folders' | 'products' | 'sellers' | 'promotions' | 'orders' | 'import' | 'pos';
+export type AdminTab = 'dashboard' | 'profile' | 'personnel' | 'catalog-hub' | 'welfare' | 'batches' | 'folders' | 'products' | 'sellers' | 'promotions' | 'orders' | 'import' | 'pos';

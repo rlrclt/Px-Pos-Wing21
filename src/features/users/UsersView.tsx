@@ -22,14 +22,7 @@ interface UsersViewProps {
   onNavigate: (path: RoutePath) => void;
   onSelectRole: (path: RoutePath, userName: string) => void;
   onToggleStatus: (userId: string) => void;
-  onCreateUser: (userForm: {
-    username: string;
-    pin_hash: string;
-    full_name: string;
-    role: UserRole;
-    seller_id?: string;
-    avatar_url?: string;
-  }) => Promise<boolean>;
+  onCreateUser: (userForm: Partial<User>) => Promise<boolean>;
 }
 
 export function UsersView({
@@ -44,42 +37,69 @@ export function UsersView({
 }: UsersViewProps) {
   const [userForm, setUserForm] = useState<{
     username: string;
+    password_hash: string;
     pin_hash: string;
     full_name: string;
     role: UserRole;
     seller_id: string;
     avatar_url: string;
+    email: string;
+    google_id: string;
+    line_user_id: string;
+    line_notify_token: string;
   }>({
     username: '',
-    pin_hash: '',
+    password_hash: '123456',
+    pin_hash: '1234',
     full_name: '',
     role: 'STAFF',
     seller_id: '',
-    avatar_url: ''
+    avatar_url: '',
+    email: '',
+    google_id: '',
+    line_user_id: '',
+    line_notify_token: ''
   });
   const [formMsg, setFormMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userForm.username.trim() || !userForm.pin_hash.trim() || !userForm.full_name.trim()) {
-      setFormMsg({ type: 'error', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
+    if (!userForm.username.trim() || !userForm.full_name.trim()) {
+      setFormMsg({ type: 'error', text: 'กรุณากรอกชื่อผู้ใช้และชื่อ-สกุล' });
       return;
     }
 
     setIsSubmitting(true);
     setFormMsg(null);
     try {
-      const success = await onCreateUser(userForm);
+      const success = await onCreateUser({
+        username: userForm.username.trim(),
+        password_hash: userForm.password_hash.trim() || '123456',
+        pin_hash: userForm.pin_hash.trim() || '1234',
+        full_name: userForm.full_name.trim(),
+        role: userForm.role,
+        seller_id: userForm.seller_id.trim() || undefined,
+        avatar_url: userForm.avatar_url.trim() || undefined,
+        email: userForm.email.trim() || undefined,
+        google_id: userForm.google_id.trim() || undefined,
+        line_user_id: userForm.line_user_id.trim() || undefined,
+        line_notify_token: userForm.line_notify_token.trim() || undefined,
+      });
       if (success) {
         setFormMsg({ type: 'success', text: `สร้างผู้ใช้ "${userForm.username}" สำเร็จเรียบร้อย` });
         setUserForm({
           username: '',
-          pin_hash: '',
+          password_hash: '123456',
+          pin_hash: '1234',
           full_name: '',
           role: 'STAFF',
           seller_id: '',
-          avatar_url: ''
+          avatar_url: '',
+          email: '',
+          google_id: '',
+          line_user_id: '',
+          line_notify_token: ''
         });
       } else {
         setFormMsg({ type: 'error', text: 'ไม่สามารถสร้างผู้ใช้ได้ กรุณาลองใหม่' });
@@ -190,7 +210,7 @@ export function UsersView({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   ชื่อผู้ใช้ (Username) *
@@ -200,23 +220,39 @@ export function UsersView({
                   placeholder="เช่น cashier03, ja_wit"
                   value={userForm.username}
                   onChange={e => setUserForm({ ...userForm, username: e.target.value })}
-                  className="w-full bg-[#162032] border border-[#2b3a55] rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#162032] border border-[#2b3a55] rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  รหัส PIN / Password (4 หลัก) *
-                </label>
-                <input
-                  type="text"
-                  placeholder="1234"
-                  value={userForm.pin_hash}
-                  onChange={e => setUserForm({ ...userForm, pin_hash: e.target.value })}
-                  className="w-full bg-[#162032] border border-[#2b3a55] rounded-xl px-3.5 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    รหัสผ่าน (Password) *
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="รหัสผ่านเข้าสู่ระบบ"
+                    value={userForm.password_hash}
+                    onChange={e => setUserForm({ ...userForm, password_hash: e.target.value })}
+                    className="w-full bg-[#162032] border border-[#2b3a55] rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-amber-300 mb-1">
+                    PIN ปลดล็อคด่วน (4 หลัก) *
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="1234"
+                    value={userForm.pin_hash}
+                    onChange={e => setUserForm({ ...userForm, pin_hash: e.target.value })}
+                    className="w-full bg-[#162032] border border-amber-500/40 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
@@ -262,6 +298,37 @@ export function UsersView({
                   />
                 </div>
               )}
+
+              {/* Google & LINE Integrations */}
+              <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2.5">
+                <div className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                  การเชื่อมต่อ Google & LINE (ตัวเลือก)
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Google Email</label>
+                    <input
+                      type="email"
+                      placeholder="user@gmail.com"
+                      value={userForm.email}
+                      onChange={e => setUserForm({ ...userForm, email: e.target.value })}
+                      className="w-full bg-[#162032] border border-[#2b3a55] rounded-lg px-2.5 py-1.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">LINE User ID</label>
+                    <input
+                      type="text"
+                      placeholder="Uxxxxxxxx..."
+                      value={userForm.line_user_id}
+                      onChange={e => setUserForm({ ...userForm, line_user_id: e.target.value })}
+                      className="w-full bg-[#162032] border border-[#2b3a55] rounded-lg px-2.5 py-1.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">

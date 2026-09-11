@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Home } from 'lucide-react';
 import type { RoutePath, AdminTab } from './types/ui.ts';
-import type { Soldier, ProductCatalog, Seller, User, UserRole, ProductUOMConversion, Promotion } from './types/schema.ts';
+import type { Soldier, ProductCatalog, Seller, User, ProductUOMConversion, Promotion } from './types/schema.ts';
 import { api, type DriveFolder } from './core/api.ts';
 import { useTheme } from './hooks/useTheme.ts';
 import { useToast } from './hooks/useToast.ts';
@@ -12,6 +12,7 @@ import { Header } from './components/layout/Header.tsx';
 import { ToastContainer } from './components/common/ToastContainer.tsx';
 import { LogoutConfirmModal } from './components/common/LogoutConfirmModal.tsx';
 import { LoginView } from './features/auth/LoginView.tsx';
+import { PinUnlockModal } from './features/auth/PinUnlockModal.tsx';
 import { UsersView } from './features/users/UsersView.tsx';
 import { AdminView } from './features/admin/AdminView.tsx';
 import { PosView } from './features/pos/PosView.tsx';
@@ -21,7 +22,7 @@ export function App() {
   const { theme, toggleTheme, isLight } = useTheme();
   const { showToast } = useToast();
   const { isOnline, setIsOnline } = usePosStore();
-  const { currentUser, isAuthenticated, logout } = useAuthStore();
+  const { currentUser, isAuthenticated, isLocked, lockScreen, logout } = useAuthStore();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Route & Navigation State
@@ -244,17 +245,21 @@ export function App() {
     }
   };
 
-  const handleCreateUser = async (userForm: {
-    username: string;
-    pin_hash: string;
-    full_name: string;
-    role: UserRole;
-    seller_id?: string;
-    avatar_url?: string;
-  }) => {
+  const handleCreateUser = async (userForm: Partial<User>) => {
     try {
       const newUser: User = {
         user_id: 'USR-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+        username: userForm.username || '',
+        password_hash: userForm.password_hash || '123456',
+        pin_hash: userForm.pin_hash || '1234',
+        full_name: userForm.full_name || '',
+        role: userForm.role || 'STAFF',
+        seller_id: userForm.seller_id,
+        avatar_url: userForm.avatar_url,
+        email: userForm.email,
+        google_id: userForm.google_id,
+        line_user_id: userForm.line_user_id,
+        line_notify_token: userForm.line_notify_token,
         is_active: true,
         ...userForm
       };
@@ -404,6 +409,7 @@ export function App() {
           currentPath={currentPath}
           onNavigate={navigateTo}
           onLogout={() => setIsLogoutModalOpen(true)}
+          onLock={lockScreen}
           currentUser={currentUser ? { 
             name: currentUser.full_name, 
             role: currentUser.role,
@@ -439,11 +445,15 @@ export function App() {
           loadUOMs={loadUOMs}
           navigateTo={navigateTo}
           onLogout={() => setIsLogoutModalOpen(true)}
+          onLock={lockScreen}
           currentUser={currentUser}
           isOnline={isOnline}
           onToggleTheme={toggleTheme}
         />
       )}
+
+      {/* Quick PIN Screen Unlock Modal */}
+      <PinUnlockModal isOpen={isLocked} />
 
       {/* Logout Confirmation Modal */}
       <LogoutConfirmModal

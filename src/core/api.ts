@@ -219,9 +219,9 @@ export class PXApiClient {
   // ----------------------------------------
   // 1. User Management (Global Users Table)
   // ----------------------------------------
-  async login(username: string, pin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  async login(username: string, passwordOrPin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     try {
-      const json = await this.postGas('login', { username, pin });
+      const json = await this.postGas('login', { username, password: passwordOrPin, pin: passwordOrPin });
       if (json.status === 'SUCCESS' && json.user) {
         return {
           success: true,
@@ -231,35 +231,140 @@ export class PXApiClient {
       if (json.status === 'ERROR') {
         return { success: false, error: json.message || 'เข้าสู่ระบบไม่สำเร็จ' };
       }
-      return await mockBackend.login(username, pin);
+      return await mockBackend.login(username, passwordOrPin);
     } catch (e: any) {
       console.warn('Backend login unavailable, falling back to mockBackend:', e);
-      return await mockBackend.login(username, pin);
+      return await mockBackend.login(username, passwordOrPin);
+    }
+  }
+
+  async unlockWithPin(userId: string, pin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    try {
+      const json = await this.postGas('unlockWithPin', { userId, pin });
+      if (json.status === 'SUCCESS' && json.user) {
+        return {
+          success: true,
+          user: json.user
+        };
+      }
+      if (json.status === 'ERROR') {
+        return { success: false, error: json.message || 'รหัส PIN ไม่ถูกต้อง' };
+      }
+      return await mockBackend.unlockWithPin(userId, pin);
+    } catch (e: any) {
+      console.warn('Backend unlock unavailable, falling back to mockBackend:', e);
+      return await mockBackend.unlockWithPin(userId, pin);
+    }
+  }
+
+  async googleLogin(payload: { google_id?: string; email?: string; credential?: string }): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    try {
+      const json = await this.postGas('googleLogin', payload);
+      if (json.status === 'SUCCESS' && json.user) {
+        return {
+          success: true,
+          user: json.user
+        };
+      }
+      if (json.status === 'ERROR') {
+        return { success: false, error: json.message || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ' };
+      }
+      return await mockBackend.googleLogin(payload);
+    } catch (e: any) {
+      console.warn('Backend googleLogin unavailable, falling back to mockBackend:', e);
+      return await mockBackend.googleLogin(payload);
+    }
+  }
+
+  async lineLogin(payload: { line_user_id: string }): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    try {
+      const json = await this.postGas('lineLogin', payload);
+      if (json.status === 'SUCCESS' && json.user) {
+        return {
+          success: true,
+          user: json.user
+        };
+      }
+      if (json.status === 'ERROR') {
+        return { success: false, error: json.message || 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ' };
+      }
+      return await mockBackend.lineLogin(payload);
+    } catch (e: any) {
+      console.warn('Backend lineLogin unavailable, falling back to mockBackend:', e);
+      return await mockBackend.lineLogin(payload);
+    }
+  }
+
+  async sendLinePushNotification(payload: { target_user_id: string; channel_access_token?: string; messages?: any[]; flex_contents?: any; text?: string; alt_text?: string }): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const json = await this.postGas('sendLinePushNotification', payload);
+      if (json.status === 'SUCCESS') {
+        return { success: true, message: json.message || 'ส่งการแจ้งเตือนสำเร็จ' };
+      }
+      if (json.status === 'ERROR') {
+        return { success: false, error: json.message || 'ส่งการแจ้งเตือนไม่สำเร็จ' };
+      }
+      return await mockBackend.sendLinePushNotification(payload);
+    } catch (e: any) {
+      console.warn('Backend sendLinePushNotification unavailable, falling back to mockBackend:', e);
+      return await mockBackend.sendLinePushNotification(payload);
+    }
+  }
+
+  async sendLineNotifyTest(token: string, message: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const json = await this.postGas('sendLineNotifyTest', { token, message });
+      if (json.status === 'SUCCESS') {
+        return { success: true, message: json.message || 'ส่ง LINE Notify สำเร็จ' };
+      }
+      return await mockBackend.sendLineNotifyTest(token, message);
+    } catch (e: any) {
+      return await mockBackend.sendLineNotifyTest(token, message);
     }
   }
 
   async getUsers(): Promise<User[]> {
     const endpoint = `${this.getProxyUrl()}?action=getUsers`;
-    const res = await fetch(endpoint);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ไม่สามารถดึงรายชื่อผู้ใช้จาก Google Sheets ได้`);
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ไม่สามารถดึงรายชื่อผู้ใช้จาก Google Sheets ได้`);
+      }
+      const json = await this.safeParseJson(res);
+      return json.data || [];
+    } catch (e) {
+      console.warn('Backend getUsers unavailable, falling back to mockBackend:', e);
+      return await mockBackend.getUsers();
     }
-    const json = await this.safeParseJson(res);
-    return json.data || [];
   }
 
-  async createUser(user: User): Promise<{ success: boolean; user?: User; error?: string }> {
+  async createUser(user: Partial<User>): Promise<{ success: boolean; data?: User; user?: User; error?: string }> {
     try {
       const json = await this.postGas('createUser', { user });
       if (json.status === 'SUCCESS') {
+        const created = { ...user, user_id: json.user_id || user.user_id } as User;
         return {
           success: true,
-          user: { ...user, user_id: json.user_id || user.user_id }
+          data: created,
+          user: created
         };
       }
       return { success: false, error: json.message || 'ไม่สามารถสร้างผู้ใช้ได้' };
     } catch (e: any) {
-      return { success: false, error: `เกิดข้อผิดพลาดในการเชื่อมต่อ: ${e.message || e.toString()}` };
+      return await mockBackend.createUser(user as any);
+    }
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<{ success: boolean; data?: User; user?: User; error?: string }> {
+    try {
+      const json = await this.postGas('updateUser', { userId, updates });
+      if (json.status === 'SUCCESS') {
+        const updated = { ...updates, user_id: userId } as User;
+        return { success: true, data: updated, user: updated };
+      }
+      return { success: false, error: json.message || 'ไม่สามารถอัปเดตผู้ใช้ได้' };
+    } catch (e: any) {
+      return await mockBackend.updateUser(userId, updates);
     }
   }
 
@@ -271,20 +376,24 @@ export class PXApiClient {
       }
       return { success: false, error: json.message || 'ไม่สามารถลบผู้ใช้ได้' };
     } catch (e: any) {
-      return { success: false, error: `เกิดข้อผิดพลาด: ${e.message || e.toString()}` };
+      return await mockBackend.deleteUser(userId);
     }
   }
 
-  async toggleUserActive(userId: string): Promise<{ success: boolean; is_active?: boolean; error?: string }> {
+  async toggleUserStatus(userId: string): Promise<{ success: boolean; is_active?: boolean; error?: string }> {
     try {
-      const json = await this.postGas('toggleUserActive', { userId });
+      const json = await this.postGas('toggleUserStatus', { userId });
       if (json.status === 'SUCCESS') {
         return { success: true, is_active: json.is_active };
       }
       return { success: false, error: json.message || 'ไม่สามารถเปลี่ยนสถานะได้' };
     } catch (e: any) {
-      return { success: false, error: `เกิดข้อผิดพลาด: ${e.message || e.toString()}` };
+      return await mockBackend.toggleUserStatus(userId);
     }
+  }
+
+  async toggleUserActive(userId: string): Promise<{ success: boolean; is_active?: boolean; error?: string }> {
+    return this.toggleUserStatus(userId);
   }
 
   // ----------------------------------------
@@ -721,6 +830,41 @@ export class PXApiClient {
         error: e.message || 'ไม่สามารถอัปโหลดรูปโปรไฟล์ผู้ฝากขายได้'
       };
     }
+  }
+
+  async uploadUserAvatar(payload: {
+    user_id?: string;
+    image_base64: string;
+    mime_type?: string;
+    folder_id?: string;
+  }): Promise<{ status?: string; success: boolean; image_url?: string; file_id?: string; web_view_link?: string; message?: string; error?: string }> {
+    try {
+      const json = await this.postGas('uploadUserAvatar', payload);
+      return {
+        status: json.status || 'SUCCESS',
+        success: json.success !== false && json.status !== 'ERROR',
+        file_id: json.file_id,
+        image_url: json.image_url,
+        web_view_link: json.web_view_link,
+        message: json.message,
+        error: json.error || (json.status === 'ERROR' ? json.message : undefined)
+      };
+    } catch (e: any) {
+      return {
+        status: 'ERROR',
+        success: false,
+        error: e.message || 'ไม่สามารถอัปโหลดรูปโปรไฟล์ผู้ใช้ได้'
+      };
+    }
+  }
+
+  async uploadDriveFile(payload: {
+    file_name?: string;
+    image_base64: string;
+    mime_type?: string;
+    folder_id?: string;
+  }): Promise<{ status?: string; success: boolean; image_url?: string; file_id?: string; web_view_link?: string; message?: string; error?: string }> {
+    return this.uploadUserAvatar(payload);
   }
 
   async getProductUOMs(): Promise<ProductUOMConversion[]> {

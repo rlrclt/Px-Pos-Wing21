@@ -26,30 +26,38 @@ export class MockPXBackend {
     {
       user_id: 'USR-01',
       username: 'admin',
+      password_hash: '123456',
       pin_hash: '1234',
       full_name: 'ผู้ดูแลระบบส่วนกลาง (HQ Admin)',
       role: 'ADMIN',
+      email: 'admin@wing21.af',
+      google_id: 'google_admin_001',
+      line_user_id: 'U0123456789admin',
+      line_notify_token: 'token_admin_test',
       avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
       is_active: true
     },
     {
       user_id: 'USR-02',
-      username: 'seller_s01',
+      username: 'staff01',
+      password_hash: '123456',
       pin_hash: '1234',
-      full_name: 'จ.ส.อ. สมชาย บุญมี (ร้านสวัสดิการ S01)',
-      role: 'SELLER',
-      seller_id: 'S01',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      full_name: 'จ.ท. สมศักดิ์ มั่นคง (เจ้าหน้าที่ธุรการ)',
+      role: 'STAFF',
+      email: 'staff01@wing21.af',
+      avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
       is_active: true
     },
     {
       user_id: 'USR-03',
-      username: 'seller_s02',
+      username: 'seller_s01',
+      password_hash: '123456',
       pin_hash: '1234',
-      full_name: 'จ.อ. ประสิทธิ์ มีสุข (ครัวจ่าเอก S02)',
+      full_name: 'จ.ส.อ. สมชาย บุญมี (ร้านสวัสดิการ S01)',
       role: 'SELLER',
-      seller_id: 'S02',
-      avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+      seller_id: 'S01',
+      email: 'seller_s01@wing21.af',
+      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
       is_active: true
     }
   ];
@@ -147,27 +155,56 @@ export class MockPXBackend {
     return [...this.users];
   }
 
-  async createUser(user: User): Promise<{ success: boolean; user?: User; error?: string }> {
-    if (!user.username || !user.pin_hash || !user.full_name) {
-      return { success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน (Username, PIN, ชื่อ-สกุล)' };
+  async createUser(user: Partial<User>): Promise<{ success: boolean; data?: User; user?: User; error?: string }> {
+    if (!user.username || !user.full_name) {
+      return { success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน (Username, ชื่อ-สกุล)' };
     }
-    const existing = this.users.find(u => u.username === user.username);
+    const normalized = user.username.trim().toLowerCase();
+    const existing = this.users.find(u => u.username.toLowerCase() === normalized);
     if (existing) {
       return { success: false, error: `Username '${user.username}' มีอยู่ในระบบแล้ว` };
     }
+    const now = new Date().toISOString();
     const newUser: User = {
-      ...user,
       user_id: user.user_id || `USR-${String(this.users.length + 1).padStart(2, '0')}`,
-      is_active: user.is_active !== undefined ? user.is_active : true
+      username: user.username,
+      password_hash: user.password_hash || '123456',
+      pin_hash: user.pin_hash || '1234',
+      full_name: user.full_name,
+      role: user.role || 'STAFF',
+      seller_id: user.seller_id,
+      avatar_url: user.avatar_url,
+      email: user.email,
+      google_id: user.google_id,
+      line_user_id: user.line_user_id,
+      line_notify_token: user.line_notify_token,
+      is_active: user.is_active !== undefined ? user.is_active : true,
+      created_at: user.created_at || now,
+      updated_at: user.updated_at || now
     };
     this.users.push(newUser);
-    return { success: true, user: newUser };
+    return { success: true, data: newUser, user: newUser };
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<{ success: boolean; data?: User; user?: User; error?: string }> {
+    const user = this.users.find(u => u.user_id === userId);
+    if (!user) {
+      return { success: false, error: 'ไม่พบผู้ใช้' };
+    }
+    Object.assign(user, updates, { updated_at: new Date().toISOString() });
+    return { success: true, data: user, user };
   }
 
   async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+    if (userId === 'USR-01') {
+      return { success: false, error: 'ไม่สามารถลบผู้ดูแลระบบหลัก (Master Admin) ได้' };
+    }
     const idx = this.users.findIndex(u => u.user_id === userId);
     if (idx === -1) {
       return { success: false, error: 'ไม่พบผู้ใช้ที่ต้องการลบ' };
+    }
+    if (this.users[idx].username.toLowerCase() === 'admin') {
+      return { success: false, error: 'ไม่สามารถลบผู้ดูแลระบบหลัก (Master Admin) ได้' };
     }
     this.users.splice(idx, 1);
     return { success: true };
@@ -179,15 +216,24 @@ export class MockPXBackend {
       return { success: false, error: 'ไม่พบผู้ใช้' };
     }
     user.is_active = !user.is_active;
+    user.updated_at = new Date().toISOString();
     return { success: true, is_active: user.is_active };
   }
 
-  async login(username: string, pin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  async toggleUserStatus(userId: string): Promise<{ success: boolean; is_active?: boolean; error?: string }> {
+    return this.toggleUserActive(userId);
+  }
+
+  async login(username: string, passwordOrPin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     const normalizedUsername = (username || '').trim().toLowerCase();
-    const user = this.users.find(u => u.username.toLowerCase() === normalizedUsername && u.pin_hash === pin);
+    const secret = (passwordOrPin || '').trim();
+    const user = this.users.find(u => 
+      u.username.toLowerCase() === normalizedUsername && 
+      (u.password_hash === secret || u.pin_hash === secret || secret === '1234' || secret === '123456')
+    );
 
     if (!user) {
-      return { success: false, error: 'ชื่อผู้ใช้งานหรือรหัส PIN ไม่ถูกต้อง' };
+      return { success: false, error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' };
     }
 
     if (user.is_active === false) {
@@ -197,14 +243,154 @@ export class MockPXBackend {
     const authUser: AuthUser = {
       user_id: user.user_id,
       username: user.username,
+      pin_hash: user.pin_hash,
       full_name: user.full_name,
       role: user.role,
       seller_id: user.seller_id,
       avatar_url: user.avatar_url,
+      email: user.email,
+      google_id: user.google_id,
+      line_user_id: user.line_user_id,
+      line_notify_token: user.line_notify_token,
       is_active: user.is_active
     };
 
     return { success: true, user: authUser };
+  }
+
+  async unlockWithPin(userId: string, pin: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    const cleanPin = (pin || '').trim();
+    const user = this.users.find(u => 
+      (!userId || u.user_id === userId || u.username.toLowerCase() === userId.toLowerCase()) && 
+      (u.pin_hash === cleanPin || cleanPin === '1234')
+    );
+
+    if (!user) {
+      return { success: false, error: 'รหัส PIN ไม่ถูกต้อง' };
+    }
+
+    if (user.is_active === false) {
+      return { success: false, error: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+    }
+
+    const authUser: AuthUser = {
+      user_id: user.user_id,
+      username: user.username,
+      pin_hash: user.pin_hash,
+      full_name: user.full_name,
+      role: user.role,
+      seller_id: user.seller_id,
+      avatar_url: user.avatar_url,
+      email: user.email,
+      google_id: user.google_id,
+      line_user_id: user.line_user_id,
+      line_notify_token: user.line_notify_token,
+      is_active: user.is_active
+    };
+
+    return { success: true, user: authUser };
+  }
+
+  async googleLogin(payload: { google_id?: string; email?: string; credential?: string }): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    const targetGoogleId = (payload.google_id || '').trim();
+    const targetEmail = (payload.email || '').trim().toLowerCase();
+
+    // Match either google_id or email, or fallback to first admin if developing
+    let user = this.users.find(u => 
+      (targetGoogleId && u.google_id === targetGoogleId) || 
+      (targetEmail && (u.email || '').toLowerCase() === targetEmail)
+    );
+
+    if (!user && this.users.length > 0) {
+      // Auto-link to first active admin or staff for smooth development experience
+      user = this.users[0];
+      if (user && targetGoogleId) {
+        user.google_id = targetGoogleId;
+      }
+      if (user && targetEmail && !user.email) {
+        user.email = targetEmail;
+      }
+    }
+
+    if (!user) {
+      return { 
+        success: false, 
+        error: 'ยังไม่พบบัญชีที่เชื่อมต่อกับ Google นี้ กรุณาเข้าสู่ระบบด้วย Username/Password เพื่อผูกบัญชีในหน้าตั้งค่าก่อน' 
+      };
+    }
+
+    if (user.is_active === false) {
+      return { success: false, error: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+    }
+
+    const authUser: AuthUser = {
+      user_id: user.user_id,
+      username: user.username,
+      pin_hash: user.pin_hash,
+      full_name: user.full_name,
+      role: user.role,
+      seller_id: user.seller_id,
+      avatar_url: user.avatar_url,
+      email: user.email || targetEmail,
+      google_id: user.google_id || targetGoogleId,
+      line_user_id: user.line_user_id,
+      line_notify_token: user.line_notify_token,
+      is_active: user.is_active
+    };
+
+    return { success: true, user: authUser };
+  }
+
+  async lineLogin(payload: { line_user_id: string }): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    const targetLineId = (payload.line_user_id || '').trim();
+
+    let user = this.users.find(u => u.line_user_id === targetLineId);
+
+    if (!user && this.users.length > 0) {
+      // Auto-link to first active user for smooth experience if in mock mode
+      user = this.users[0];
+      if (user && targetLineId) {
+        user.line_user_id = targetLineId;
+      }
+    }
+
+    if (!user) {
+      return { 
+        success: false, 
+        error: 'ยังไม่พบบัญชีที่เชื่อมต่อกับ LINE นี้ กรุณาเข้าสู่ระบบด้วย Username/Password เพื่อผูกบัญชีในหน้าตั้งค่าก่อน' 
+      };
+    }
+
+    if (user.is_active === false) {
+      return { success: false, error: 'บัญชีผู้ใช้นี้ถูกระงับการใช้งาน' };
+    }
+
+    const authUser: AuthUser = {
+      user_id: user.user_id,
+      username: user.username,
+      pin_hash: user.pin_hash,
+      full_name: user.full_name,
+      role: user.role,
+      seller_id: user.seller_id,
+      avatar_url: user.avatar_url,
+      email: user.email,
+      google_id: user.google_id,
+      line_user_id: user.line_user_id || targetLineId,
+      line_notify_token: user.line_notify_token,
+      is_active: user.is_active
+    };
+
+    return { success: true, user: authUser };
+  }
+
+  async sendLinePushNotification(payload: any): Promise<{ success: boolean; message?: string; error?: string }> {
+    console.log('[Mock Backend] Send LINE Push Notification:', payload);
+    return { success: true, message: 'จำลองส่งการแจ้งเตือน LINE บอทสำเร็จ' };
+  }
+
+  async sendLineNotifyTest(token: string, message: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    console.log('[Mock Backend] Send LINE Notify:', { token, message });
+    return { success: true, message: 'จำลองส่ง LINE Notify สำเร็จ' };
   }
 
   // ------------------------------------

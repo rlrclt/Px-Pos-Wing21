@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  LogOut, Moon, Sun, Bell, Search, Menu, Sparkles
+  LogOut, Moon, Sun, Bell, Search, Menu, Sparkles, Lock
 } from 'lucide-react';
 import { useTheme } from '../../../hooks/useTheme.ts';
 import type { RoutePath } from '../../../types/ui.ts';
@@ -10,6 +10,8 @@ interface AdminHeaderProps {
   currentPath?: RoutePath;
   onNavigate: (path: RoutePath) => void;
   onLogout: () => void;
+  onLock?: () => void;
+  onOpenProfile?: () => void;
   currentUser: { name?: string; full_name?: string; role: string; seller_id?: string; avatar_url?: string } | AuthUser | null;
   isOnline: boolean;
   onToggleTheme: () => void;
@@ -19,6 +21,8 @@ interface AdminHeaderProps {
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onNavigate,
   onLogout,
+  onLock,
+  onOpenProfile,
   currentUser,
   isOnline,
   onToggleTheme,
@@ -114,7 +118,18 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
         {/* User Profile & Status */}
         <div className={`pl-2 sm:pl-3 flex items-center gap-2.5 border-l ${isLight ? 'border-slate-200' : 'border-[#262A36]'}`}>
-          <div className="hidden sm:flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className={`hidden sm:flex items-center gap-2 p-1.5 -my-1 rounded-xl transition cursor-pointer text-left ${
+              onOpenProfile 
+                ? isLight 
+                  ? 'hover:bg-slate-100/80 active:bg-slate-200/80' 
+                  : 'hover:bg-[#181B22] active:bg-[#202532]' 
+                : ''
+            }`}
+            title="คลิกเพื่อไปที่โปรไฟล์และความปลอดภัย"
+          >
             {(currentUser as any)?.avatar_url ? (
               <img 
                 src={(currentUser as any).avatar_url} 
@@ -144,7 +159,21 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 </span>
               </div>
             </div>
-          </div>
+          </button>
+
+          {onLock && (
+            <button
+              onClick={onLock}
+              className={`p-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs min-h-[42px] min-w-[42px] ${
+                isLight 
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200' 
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20'
+              }`}
+              title="ล็อคหน้าจอชั่วคราว (PIN Lock)"
+            >
+              <Lock className="w-4 h-4" />
+            </button>
+          )}
 
           <button
             onClick={onLogout}

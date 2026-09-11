@@ -76,6 +76,35 @@ export function getTodayDateString(d: Date = new Date()): string {
 }
 
 /**
+ * Parses promo date strings to local-time milliseconds.
+ * 'YYYY-MM-DD' (date-only) → treated as LOCAL midnight (fixes UTC parsing bug).
+ * 'YYYY-MM-DDTHH:mm' → parsed as-is (already local).
+ * Returns null when missing/invalid.
+ */
+export function parsePromoDateMs(s?: string, endOfDay = false): number | null {
+  if (!s) return null;
+  const str = s.length === 10
+    ? `${s}T${endOfDay ? '23:59:59' : '00:00:00'}`
+    : s;
+  const ms = new Date(str).getTime();
+  return isNaN(ms) ? null : ms;
+}
+
+/** โปรเปิดใช้งานแต่ยังไม่ถึงเวลาเริ่ม */
+export function isPromoUpcoming(promo: Promotion, nowMs: number = Date.now()): boolean {
+  if (promo.is_active !== true) return false;
+  const start = parsePromoDateMs(promo.start_date);
+  return start !== null && start > nowMs;
+}
+
+/** ปิดใช้งานอยู่ หรือหมดเวลาแล้ว (end ของ date-only นับถึง 23:59:59 ของวันนั้น) */
+export function isPromoExpired(promo: Promotion, nowMs: number = Date.now()): boolean {
+  if (promo.is_active !== true) return true;
+  const end = parsePromoDateMs(promo.end_date, true);
+  return end !== null && end < nowMs;
+}
+
+/**
  * Validates whether a promotion is active at a specific datetime (defaults to right now).
  * Supports both full datetime 'YYYY-MM-DDTHH:mm' and legacy date-only 'YYYY-MM-DD'.
  */
@@ -87,24 +116,21 @@ export function isPromotionActive(promo?: Promotion | null, checkDateTime?: stri
   const nowMs = checkDateTime instanceof Date
     ? checkDateTime.getTime()
     : checkDateTime
-      ? new Date(checkDateTime).getTime()
+      ? (typeof checkDateTime === 'string' && checkDateTime.length === 10 
+          ? parsePromoDateMs(checkDateTime) ?? Date.now() 
+          : new Date(checkDateTime).getTime())
       : Date.now();
 
   if (promo.start_date) {
-    const startMs = new Date(promo.start_date).getTime();
-    if (!isNaN(startMs) && nowMs < startMs) {
+    const startMs = parsePromoDateMs(promo.start_date);
+    if (startMs !== null && nowMs < startMs) {
       return false;
     }
   }
 
   if (promo.end_date) {
-    let endStr = promo.end_date;
-    // If date-only format (e.g. 2026-09-30), treat as end of day 23:59:59
-    if (endStr.length === 10) {
-      endStr += 'T23:59:59';
-    }
-    const endMs = new Date(endStr).getTime();
-    if (!isNaN(endMs) && nowMs > endMs) {
+    const endMs = parsePromoDateMs(promo.end_date, true);
+    if (endMs !== null && nowMs > endMs) {
       return false;
     }
   }
